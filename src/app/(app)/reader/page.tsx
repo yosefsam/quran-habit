@@ -19,8 +19,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bookmark, BookmarkCheck, ChevronDown, ChevronLeft, ChevronRight, Home, Settings2 } from "lucide-react";
+import { Bookmark, BookmarkCheck, ChevronDown, ChevronLeft, ChevronRight, Home, Settings2, Pause, Play, SkipBack, SkipForward, Volume2 } from "lucide-react";
 import { cn, isSameDay } from "@/lib/utils";
+import { useQuranAudioPlayer } from "@/hooks/useQuranAudioPlayer";
 
 const SWIPE_THRESHOLD = 60;
 const STORAGE_VISITED = "quran_reader_pages_visited_v1";
@@ -404,6 +405,8 @@ export default function ReaderPage() {
   );
   const totalHasanatDisplay = sessionsTotalHasanat + liveEarnedHasanat;
 
+  const audio = useQuranAudioPlayer();
+
   return (
     <div className={cn("min-h-[calc(100vh-4rem)]", readerPreferences.focusMode ? "bg-background" : "bg-background")}>
       <header className={cn("sticky top-0 z-30 border-b bg-background/85 backdrop-blur", readerPreferences.focusMode && "border-transparent")}>
@@ -597,7 +600,7 @@ export default function ReaderPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg px-4 py-5">
+      <main className={cn("mx-auto max-w-lg px-4 py-5", !readerPreferences.focusMode ? "pb-24" : "pb-6")}>
         {!readerPreferences.focusMode && (
           <div className="fixed top-[74px] right-4 z-40 md:right-[calc(50%-16rem)]">
             <div className="rounded-full border bg-background/90 backdrop-blur px-3 py-1 text-xs shadow-sm">
@@ -691,6 +694,7 @@ export default function ReaderPage() {
                     {ayahs.map((a, idx) => {
                       const prev = ayahs[idx - 1];
                       const startsNewSurah = idx === 0 ? true : a.surahNumber !== prev?.surahNumber;
+                      const playing = audio.currentAyahKey === `${a.surahNumber}:${a.ayahNumber}`;
                       return (
                         <span key={`${a.surahNumber}-${a.ayahNumber}-${idx}`}>
                           {startsNewSurah && a.surahNumber ? (
@@ -706,20 +710,30 @@ export default function ReaderPage() {
                             </span>
                           ) : null}
 
-                          <span>{a.text}</span>
-                          {a.ayahNumber ? (
-                            <span
-                              data-ayah-key={`${a.surahNumber}:${a.ayahNumber}`}
-                              className={cn(
-                                "inline-flex items-center",
-                                highlightTarget && highlightTarget.surah === a.surahNumber && highlightTarget.ayah === a.ayahNumber
-                                  ? "rounded-md bg-primary/10 ring-1 ring-primary/20 px-1"
-                                  : ""
-                              )}
-                            >
-                              <AyahMarker n={a.ayahNumber} />
-                            </span>
-                          ) : null}
+                          <span
+                            data-ayah-key={`${a.surahNumber}:${a.ayahNumber}`}
+                            onClick={() => {
+                              audio.playAyah({
+                                surahNumber: a.surahNumber,
+                                ayahNumber: a.ayahNumber,
+                                surahNameEnglish: a.surahNameEnglish,
+                                surahNameArabic: a.surahNameArabic,
+                                text: a.text,
+                              });
+                            }}
+                            className={cn(
+                              "cursor-pointer rounded-md px-1 -mx-1 transition-colors",
+                              playing ? "bg-primary/10 ring-1 ring-primary/20" : "hover:bg-muted/40",
+                              highlightTarget && highlightTarget.surah === a.surahNumber && highlightTarget.ayah === a.ayahNumber
+                                ? "bg-primary/10 ring-1 ring-primary/20"
+                                : ""
+                            )}
+                            role="button"
+                            tabIndex={0}
+                          >
+                            <span>{a.text}</span>
+                            {a.ayahNumber ? <AyahMarker n={a.ayahNumber} /> : null}
+                          </span>
                           <span> </span>
                         </span>
                       );
@@ -748,6 +762,84 @@ export default function ReaderPage() {
           </p>
         </div>
       </main>
+
+      {!readerPreferences.focusMode && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/90 backdrop-blur">
+          <div className="mx-auto max-w-lg px-4 py-3 space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Now playing</p>
+                <p className="text-sm font-medium truncate">
+                  {audio.currentAyah ? `${audio.currentAyah.surahNameEnglish ?? "Surah"} · Ayah ${audio.currentAyah.ayahNumber}` : "—"}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => audio.playPage(ayahs)}
+                  className="hidden sm:inline-flex"
+                >
+                  <Volume2 className="h-4 w-4 mr-2" />
+                  Play page
+                </Button>
+                <Select value={audio.reciterId} onValueChange={audio.setReciterId}>
+                  <SelectTrigger className="h-9 w-[170px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {audio.RECITERS.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="icon" onClick={audio.prev} aria-label="Previous ayah">
+                <SkipBack className="h-5 w-5" />
+              </Button>
+              <Button
+                size="icon"
+                onClick={() => {
+                  if (!audio.currentAyah) audio.playPage(ayahs);
+                  else audio.toggle();
+                }}
+                aria-label={audio.isPlaying ? "Pause" : "Play"}
+              >
+                {audio.isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+              </Button>
+              <Button variant="outline" size="icon" onClick={audio.next} aria-label="Next ayah">
+                <SkipForward className="h-5 w-5" />
+              </Button>
+
+              <div className="flex-1">
+                <input
+                  type="range"
+                  min={0}
+                  max={Math.max(1, audio.duration || 1)}
+                  value={Math.min(audio.currentTime, audio.duration || 0)}
+                  onChange={(e) => audio.seek(parseFloat(e.target.value))}
+                  className="w-full accent-[hsl(var(--primary))]"
+                />
+                <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground tabular-nums">
+                  <span>{audio.formattedTime}</span>
+                  <span>{audio.formattedDuration}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Button variant="ghost" size="sm" onClick={() => audio.playPage(ayahs)} className="sm:hidden">
+                <Volume2 className="h-4 w-4 mr-2" />
+                Play page
+              </Button>
+              <div className="text-[11px] text-muted-foreground">
+                Tap any ayah to play it. Page playback plays ayahs in order.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
