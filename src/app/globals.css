@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 40 33% 98%;
+    --foreground: 24 10% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 24 10% 12%;
+    --primary: 160 84% 39%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 20% 94%;
+    --secondary-foreground: 24 10% 12%;
+    --muted: 40 15% 94%;
+    --muted-foreground: 24 8% 42%;
+    --accent: 160 40% 94%;
+    --accent-foreground: 160 60% 25%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 40 14% 90%;
+    --input: 40 14% 90%;
+    --ring: 160 84% 39%;
+    --radius: 0.75rem;
+    --popover: 0 0% 100%;
+    --popover-foreground: 24 10% 12%;
+  }
+  .dark {
+    --background: 24 10% 8%;
+    --foreground: 40 10% 96%;
+    --card: 24 10% 11%;
+    --card-foreground: 40 10% 96%;
+    --primary: 160 70% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 24 12% 16%;
+    --secondary-foreground: 40 10% 96%;
+    --muted: 24 12% 16%;
+    --muted-foreground: 40 8% 55%;
+    --accent: 160 30% 18%;
+    --accent-foreground: 160 60% 75%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 24 12% 18%;
+    --input: 24 12% 18%;
+    --ring: 160 70% 45%;
+    --popover: 24 10% 11%;
+    --popover-foreground: 40 10% 96%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground antialiased; }
+}
+
+html { scroll-behavior: smooth; }
+
+.font-arabic {
+  font-family: var(--font-arabic), ui-serif, serif;
+}
