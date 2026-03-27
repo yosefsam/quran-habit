@@ -83,5 +83,7 @@ export interface LastReadPosition {
 export interface ReaderPreferences {
   focusMode: boolean;
   showTranslation: boolean;
+  /** Selected verified translation source used in reader UI. */
+  translationKey: "sahih" | "pickthall" | "yusufali";
   fontScale: number; // 0.9 - 1.3
 }

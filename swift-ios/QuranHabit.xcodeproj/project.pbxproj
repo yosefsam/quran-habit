@@ -1,0 +1,455 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B00000000000000000000001 /* QuranHabitApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000001 /* QuranHabitApp.swift */; };
+		B00000000000000000000002 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000002 /* AppEnvironment.swift */; };
+		B00000000000000000000003 /* QuranModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000003 /* QuranModels.swift */; };
+		B00000000000000000000004 /* Bookmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000004 /* Bookmark.swift */; };
+		B00000000000000000000005 /* ReadingProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000005 /* ReadingProgress.swift */; };
+		B00000000000000000000006 /* QuranDataProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000006 /* QuranDataProviding.swift */; };
+		B00000000000000000000007 /* MockQuranDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000007 /* MockQuranDataService.swift */; };
+		B00000000000000000000008 /* HassanatEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000008 /* HassanatEstimator.swift */; };
+		B00000000000000000000009 /* BookmarkStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000009 /* BookmarkStore.swift */; };
+		B0000000000000000000000A /* ReadingProgressStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0000000000000000000000A /* ReadingProgressStore.swift */; };
+		B0000000000000000000000B /* AudioPlaybackControlling.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0000000000000000000000B /* AudioPlaybackControlling.swift */; };
+		B0000000000000000000000C /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0000000000000000000000C /* HomeViewModel.swift */; };
+		B0000000000000000000000D /* ReaderViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0000000000000000000000D /* ReaderViewModel.swift */; };
+		B0000000000000000000000E /* BookmarksViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0000000000000000000000E /* BookmarksViewModel.swift */; };
+		B0000000000000000000000F /* AnalyticsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0000000000000000000000F /* AnalyticsViewModel.swift */; };
+		B00000000000000000000010 /* SettingsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000010 /* SettingsViewModel.swift */; };
+		B00000000000000000000011 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000011 /* MainTabView.swift */; };
+		B00000000000000000000012 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000012 /* HomeView.swift */; };
+		B00000000000000000000013 /* ReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000013 /* ReaderView.swift */; };
+		B00000000000000000000014 /* JumpNavigationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000014 /* JumpNavigationSheet.swift */; };
+		B00000000000000000000015 /* BookmarksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000015 /* BookmarksView.swift */; };
+		B00000000000000000000016 /* AnalyticsDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000016 /* AnalyticsDashboardView.swift */; };
+		B00000000000000000000017 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000017 /* SettingsView.swift */; };
+		B00000000000000000000018 /* HassanatBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000018 /* HassanatBadge.swift */; };
+		B00000000000000000000019 /* AyahBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = F00000000000000000000019 /* AyahBlock.swift */; };
+		B0000000000000000000001A /* MockQuranSample.json in Resources */ = {isa = PBXBuildFile; fileRef = F0000000000000000000001A /* MockQuranSample.json */; };
+		B0000000000000000000001B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F0000000000000000000001B /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		F00000000000000000000001 /* QuranHabitApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuranHabitApp.swift; sourceTree = "<group>"; };
+		F00000000000000000000002 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
+		F00000000000000000000003 /* QuranModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuranModels.swift; sourceTree = "<group>"; };
+		F00000000000000000000004 /* Bookmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bookmark.swift; sourceTree = "<group>"; };
+		F00000000000000000000005 /* ReadingProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingProgress.swift; sourceTree = "<group>"; };
+		F00000000000000000000006 /* QuranDataProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuranDataProviding.swift; sourceTree = "<group>"; };
+		F00000000000000000000007 /* MockQuranDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockQuranDataService.swift; sourceTree = "<group>"; };
+		F00000000000000000000008 /* HassanatEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HassanatEstimator.swift; sourceTree = "<group>"; };
+		F00000000000000000000009 /* BookmarkStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkStore.swift; sourceTree = "<group>"; };
+		F0000000000000000000000A /* ReadingProgressStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadingProgressStore.swift; sourceTree = "<group>"; };
+		F0000000000000000000000B /* AudioPlaybackControlling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlaybackControlling.swift; sourceTree = "<group>"; };
+		F0000000000000000000000C /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		F0000000000000000000000D /* ReaderViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderViewModel.swift; sourceTree = "<group>"; };
+		F0000000000000000000000E /* BookmarksViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksViewModel.swift; sourceTree = "<group>"; };
+		F0000000000000000000000F /* AnalyticsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsViewModel.swift; sourceTree = "<group>"; };
+		F00000000000000000000010 /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
+		F00000000000000000000011 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		F00000000000000000000012 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		F00000000000000000000013 /* ReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderView.swift; sourceTree = "<group>"; };
+		F00000000000000000000014 /* JumpNavigationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JumpNavigationSheet.swift; sourceTree = "<group>"; };
+		F00000000000000000000015 /* BookmarksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksView.swift; sourceTree = "<group>"; };
+		F00000000000000000000016 /* AnalyticsDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsDashboardView.swift; sourceTree = "<group>"; };
+		F00000000000000000000017 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		F00000000000000000000018 /* HassanatBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HassanatBadge.swift; sourceTree = "<group>"; };
+		F00000000000000000000019 /* AyahBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AyahBlock.swift; sourceTree = "<group>"; };
+		F0000000000000000000001A /* MockQuranSample.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = MockQuranSample.json; sourceTree = "<group>"; };
+		F0000000000000000000001B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		F000000000000000000000FF /* QuranHabit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuranHabit.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		E00000000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		G00000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				G00000000000000000000002 /* QuranHabit */,
+				G00000000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		G00000000000000000000002 /* QuranHabit */ = {
+			isa = PBXGroup;
+			children = (
+				G00000000000000000000010 /* App */,
+				G00000000000000000000011 /* Models */,
+				G00000000000000000000012 /* Services */,
+				G00000000000000000000013 /* ViewModels */,
+				G00000000000000000000014 /* Views */,
+				G00000000000000000000015 /* Components */,
+				G00000000000000000000016 /* Resources */,
+				F0000000000000000000001B /* Assets.xcassets */,
+			);
+			path = QuranHabit;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F000000000000000000000FF /* QuranHabit.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000010 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				F00000000000000000000001 /* QuranHabitApp.swift */,
+				F00000000000000000000002 /* AppEnvironment.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000011 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				F00000000000000000000003 /* QuranModels.swift */,
+				F00000000000000000000004 /* Bookmark.swift */,
+				F00000000000000000000005 /* ReadingProgress.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000012 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				F00000000000000000000006 /* QuranDataProviding.swift */,
+				F00000000000000000000007 /* MockQuranDataService.swift */,
+				F00000000000000000000008 /* HassanatEstimator.swift */,
+				F00000000000000000000009 /* BookmarkStore.swift */,
+				F0000000000000000000000A /* ReadingProgressStore.swift */,
+				F0000000000000000000000B /* AudioPlaybackControlling.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000013 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				F0000000000000000000000C /* HomeViewModel.swift */,
+				F0000000000000000000000D /* ReaderViewModel.swift */,
+				F0000000000000000000000E /* BookmarksViewModel.swift */,
+				F0000000000000000000000F /* AnalyticsViewModel.swift */,
+				F00000000000000000000010 /* SettingsViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000014 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				F00000000000000000000011 /* MainTabView.swift */,
+				G00000000000000000000017 /* Home */,
+				G00000000000000000000018 /* Reader */,
+				G00000000000000000000019 /* Bookmarks */,
+				G0000000000000000000001A /* Analytics */,
+				G0000000000000000000001B /* Settings */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000015 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				F00000000000000000000018 /* HassanatBadge.swift */,
+				F00000000000000000000019 /* AyahBlock.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000016 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				F0000000000000000000001A /* MockQuranSample.json */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000017 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				F00000000000000000000012 /* HomeView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000018 /* Reader */ = {
+			isa = PBXGroup;
+			children = (
+				F00000000000000000000013 /* ReaderView.swift */,
+				F00000000000000000000014 /* JumpNavigationSheet.swift */,
+			);
+			path = Reader;
+			sourceTree = "<group>";
+		};
+		G00000000000000000000019 /* Bookmarks */ = {
+			isa = PBXGroup;
+			children = (
+				F00000000000000000000015 /* BookmarksView.swift */,
+			);
+			path = Bookmarks;
+			sourceTree = "<group>";
+		};
+		G0000000000000000000001A /* Analytics */ = {
+			isa = PBXGroup;
+			children = (
+				F00000000000000000000016 /* AnalyticsDashboardView.swift */,
+			);
+			path = Analytics;
+			sourceTree = "<group>";
+		};
+		G0000000000000000000001B /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				F00000000000000000000017 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E00000000000000000000003 /* QuranHabit */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E00000000000000000000008 /* Build configuration list for PBXNativeTarget "QuranHabit" */;
+			buildPhases = (
+				E00000000000000000000001 /* Sources */,
+				E00000000000000000000002 /* Frameworks */,
+				E00000000000000000000004 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = QuranHabit;
+			productName = QuranHabit;
+			productReference = F000000000000000000000FF /* QuranHabit.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E00000000000000000000005 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					E00000000000000000000003 = {
+						CreatedOnToolsVersion = 15.0;
+					};
+				};
+			};
+			buildConfigurationList = E00000000000000000000006 /* Build configuration list for PBXProject "QuranHabit" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = G00000000000000000000001;
+			productRefGroup = G00000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E00000000000000000000003 /* QuranHabit */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		E00000000000000000000004 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B0000000000000000000001A /* MockQuranSample.json in Resources */,
+				B0000000000000000000001B /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		E00000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B00000000000000000000001 /* QuranHabitApp.swift in Sources */,
+				B00000000000000000000002 /* AppEnvironment.swift in Sources */,
+				B00000000000000000000003 /* QuranModels.swift in Sources */,
+				B00000000000000000000004 /* Bookmark.swift in Sources */,
+				B00000000000000000000005 /* ReadingProgress.swift in Sources */,
+				B00000000000000000000006 /* QuranDataProviding.swift in Sources */,
+				B00000000000000000000007 /* MockQuranDataService.swift in Sources */,
+				B00000000000000000000008 /* HassanatEstimator.swift in Sources */,
+				B00000000000000000000009 /* BookmarkStore.swift in Sources */,
+				B0000000000000000000000A /* ReadingProgressStore.swift in Sources */,
+				B0000000000000000000000B /* AudioPlaybackControlling.swift in Sources */,
+				B0000000000000000000000C /* HomeViewModel.swift in Sources */,
+				B0000000000000000000000D /* ReaderViewModel.swift in Sources */,
+				B0000000000000000000000E /* BookmarksViewModel.swift in Sources */,
+				B0000000000000000000000F /* AnalyticsViewModel.swift in Sources */,
+				B00000000000000000000010 /* SettingsViewModel.swift in Sources */,
+				B00000000000000000000011 /* MainTabView.swift in Sources */,
+				B00000000000000000000012 /* HomeView.swift in Sources */,
+				B00000000000000000000013 /* ReaderView.swift in Sources */,
+				B00000000000000000000014 /* JumpNavigationSheet.swift in Sources */,
+				B00000000000000000000015 /* BookmarksView.swift in Sources */,
+				B00000000000000000000016 /* AnalyticsDashboardView.swift in Sources */,
+				B00000000000000000000017 /* SettingsView.swift in Sources */,
+				B00000000000000000000018 /* HassanatBadge.swift in Sources */,
+				B00000000000000000000019 /* AyahBlock.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		C00000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		C00000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		C00000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Quran Habit";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.quranhabit.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		C00000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Quran Habit";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.quranhabit.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		E00000000000000000000006 /* Build configuration list for PBXProject "QuranHabit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C00000000000000000000001 /* Debug */,
+				C00000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E00000000000000000000008 /* Build configuration list for PBXNativeTarget "QuranHabit" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C00000000000000000000003 /* Debug */,
+				C00000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = E00000000000000000000005 /* Project object */;
+}

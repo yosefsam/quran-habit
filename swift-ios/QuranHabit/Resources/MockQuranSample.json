@@ -1,0 +1,68 @@
+{
+  "version": 2,
+  "pageCount": 604,
+  "pages": {
+    "1": {
+      "page": 1,
+      "juz": 1,
+      "surahNumber": 1,
+      "surahNameArabic": "الفاتحة",
+      "surahNameEnglish": "Al-Fatihah",
+      "ayahs": [
+        {
+          "surahNumber": 1,
+          "surahNameArabic": "الفاتحة",
+          "surahNameEnglish": "Al-Fatihah",
+          "ayahNumber": 1,
+          "text": "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
+        },
+        {
+          "surahNumber": 1,
+          "surahNameArabic": "الفاتحة",
+          "surahNameEnglish": "Al-Fatihah",
+          "ayahNumber": 2,
+          "text": "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ"
+        }
+      ]
+    },
+    "2": {
+      "page": 2,
+      "juz": 1,
+      "surahNumber": 2,
+      "surahNameArabic": "البقرة",
+      "surahNameEnglish": "Al-Baqarah",
+      "ayahs": [
+        {
+          "surahNumber": 2,
+          "surahNameArabic": "البقرة",
+          "surahNameEnglish": "Al-Baqarah",
+          "ayahNumber": 1,
+          "text": "الم"
+        },
+        {
+          "surahNumber": 2,
+          "surahNameArabic": "البقرة",
+          "surahNameEnglish": "Al-Baqarah",
+          "ayahNumber": 2,
+          "text": "ذَٰلِكَ الْكِتَابُ لَا رَيْبَ ۛ فِيهِ ۛ هُدًى لِّلْمُتَّقِينَ"
+        }
+      ]
+    }
+  },
+  "surahs": [
+    {
+      "number": 1,
+      "nameArabic": "الفاتحة",
+      "nameEnglish": "Al-Fatihah",
+      "ayahCount": 7,
+      "startPage": 1
+    },
+    {
+      "number": 2,
+      "nameArabic": "البقرة",
+      "nameEnglish": "Al-Baqarah",
+      "ayahCount": 286,
+      "startPage": 2
+    }
+  ]
+}

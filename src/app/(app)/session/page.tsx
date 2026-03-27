@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useAppStore } from "@/store/useAppStore";
 import { demoGoal } from "@/lib/demo-data";
-import { getHasanatForSession, formatHasanat } from "@/lib/hasanat";
+import { getHasanatForSession, formatHasanat, HASANAT_DISCLAIMER } from "@/lib/hasanat";
 import type { ReadingSession } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,7 +86,11 @@ export default function SessionPage() {
               <div className="w-32"><Label>Unit</Label><Select value={unit} onValueChange={(v) => setUnit(v as typeof goal.unit)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{UNITS.map((u) => <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>)}</SelectContent></Select></div>
             </div>
             {goalCompleted && <p className="text-sm text-primary font-medium">✓ This completes your daily goal</p>}
-            <p className="text-sm text-muted-foreground">You&apos;ll earn <span className="font-medium text-foreground">{formatHasanat(sessionHasanat)}</span> hasanat for this session.</p>
+            <p className="text-sm text-muted-foreground">
+              You&apos;ll earn <span className="font-medium text-foreground">{formatHasanat(sessionHasanat)}</span> hasanat
+              (estimate from typical letter counts).
+            </p>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">{HASANAT_DISCLAIMER}</p>
           </CardContent>
         </Card>
         <Card>

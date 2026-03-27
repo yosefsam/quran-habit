@@ -1,14 +1,12 @@
 import type { ReadingUnit } from "@/types";
+import { estimateHasanatForManualEntry } from "@/lib/hasanat/estimate";
 
-const HASANAT_PER_UNIT: Record<ReadingUnit, number> = {
-  pages: 500,
-  ayahs: 15,
-  minutes: 80,
-  surahs: 200,
-};
-
+/**
+ * Manual / logged sessions without loaded Arabic text: uses statistical letter proxies.
+ * For reader sessions, use `estimateHasanatForPageContent` from `@/lib/hasanat/estimate` per page.
+ */
 export function getHasanatForSession(amount: number, unit: ReadingUnit): number {
-  return amount * (HASANAT_PER_UNIT[unit] ?? 0);
+  return estimateHasanatForManualEntry(amount, unit);
 }
 
 export function formatHasanat(n: number): string {
@@ -16,3 +14,6 @@ export function formatHasanat(n: number): string {
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
   return n.toLocaleString();
 }
+
+export const HASANAT_DISCLAIMER =
+  "Hassanat shown here are motivational estimates for reflection and consistency, not a definitive count.";

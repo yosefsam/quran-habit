@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 40" fill="none" role="img" aria-labelledby="title">
+  <title id="title">Hidayah</title>
+  <defs>
+    <linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="55%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="hg2" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#5eead4" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#34d399" stop-opacity="0.15"/>
+    </linearGradient>
+  </defs>
+  <!-- Mark -->
+  <rect x="2" y="4" width="32" height="32" rx="9" fill="url(#hg)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
+  <rect x="2" y="4" width="32" height="32" rx="9" fill="url(#hg2)"/>
+  <path d="M10 26c4.5-7 11.5-11 18-13" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.95"/>
+  <path d="M11.5 24c3.5-4.5 8.5-7.5 14-9" stroke="white" stroke-width="1.35" stroke-linecap="round" opacity="0.55"/>
+  <circle cx="25" cy="12" r="2.25" fill="white" opacity="0.92"/>
+  <!-- Wordmark -->
+  <text x="44" y="27" fill="#fafafa" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif" font-size="20" font-weight="650" letter-spacing="-0.03em">Hidayah</text>
+</svg>

@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAppStore } from "@/store/useAppStore";
 import { demoGoal } from "@/lib/demo-data";
 import { clampPage, findSurahStartPage, getPageContent, MUSHAF_PAGE_COUNT, SURAHS, type QuranAyah } from "@/lib/quran";
+import { estimateHasanatForPageContent } from "@/lib/hasanat/estimate";
 import { getRuntimePage, loadQuranPages, loadQuranSurahs, type PagesPayload, type SurahsPayload } from "@/lib/quran/runtime";
-import { formatHasanat, getHasanatForSession } from "@/lib/hasanat";
+import { loadPageTranslations, TRANSLATION_OPTIONS, type TranslationKey } from "@/lib/quran/translations";
+import { formatHasanat } from "@/lib/hasanat";
 import type { ReadingSession } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -24,11 +26,10 @@ import { cn, isSameDay } from "@/lib/utils";
 import { useQuranAudioPlayer } from "@/hooks/useQuranAudioPlayer";
 
 const SWIPE_THRESHOLD = 60;
-const STORAGE_VISITED = "quran_reader_pages_visited_v1";
-const STORAGE_COMPLETED = "quran_reader_pages_completed_v1";
 
 export default function ReaderPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const userGoal = useAppStore((s) => s.userGoal);
   const goal = userGoal ?? demoGoal;
 
@@ -43,6 +44,9 @@ export default function ReaderPage() {
   const addSession = useAppStore((s) => s.addSession);
   const streak = useAppStore((s) => s.streak);
   const setStreak = useAppStore((s) => s.setStreak);
+  const addVisitedPage = useAppStore((s) => s.addVisitedPage);
+  const addCompletedPage = useAppStore((s) => s.addCompletedPage);
+  const proStatus = useAppStore((s) => s.proStatus);
 
   const deepLinked = searchParams.get("page");
   const deepLinkedPage = deepLinked ? clampPage(parseInt(deepLinked, 10)) : null;
@@ -53,16 +57,18 @@ export default function ReaderPage() {
   const [pagesData, setPagesData] = useState<PagesPayload | null>(null);
   const [surahsData, setSurahsData] = useState<SurahsPayload | null>(null);
   const [dataError, setDataError] = useState<string | null>(null);
+  const [pageTranslations, setPageTranslations] = useState<Record<string, string>>({});
 
   const startTimeRef = useRef<number>(Date.now());
-  const pagesVisitedRef = useRef<Set<number>>(new Set([initialPage]));
+  // Session-local pages visited in this mounted reader session only.
+  // This avoids counting all historical visited pages as "read today".
+  const sessionVisitedPagesRef = useRef<Set<number>>(new Set([initialPage]));
   const minPageRef = useRef<number>(initialPage);
   const maxPageRef = useRef<number>(initialPage);
   const liveEarnedHasanatRef = useRef<number>(0);
   const [liveEarnedHasanat, setLiveEarnedHasanat] = useState<number>(0);
   const [earnedToast, setEarnedToast] = useState<{ amount: number; id: string } | null>(null);
   const awardedPagesRef = useRef<Set<number>>(new Set());
-  const completedPagesRef = useRef<Set<number>>(new Set());
   const lastPageRef = useRef<number>(initialPage);
 
   const isBookmarked = useMemo(() => bookmarks.some((b) => b.page === page), [bookmarks, page]);
@@ -121,41 +127,19 @@ export default function ReaderPage() {
     lastPageRef.current = p;
   }
 
-  function loadStoredSet(key: string): Set<number> {
-    try {
-      const raw = localStorage.getItem(key);
-      if (!raw) return new Set();
-      const arr = JSON.parse(raw);
-      if (!Array.isArray(arr)) return new Set();
-      return new Set(arr.map((x) => clampPage(parseInt(String(x), 10))).filter((n) => Number.isFinite(n)));
-    } catch {
-      return new Set();
-    }
-  }
-
-  function persistSet(key: string, set: Set<number>) {
-    try {
-      localStorage.setItem(key, JSON.stringify(Array.from(set.values()).sort((a, b) => a - b)));
-    } catch {}
-  }
-
   function markVisited(p: number) {
-    pagesVisitedRef.current.add(p);
-    persistSet(STORAGE_VISITED, pagesVisitedRef.current);
+    sessionVisitedPagesRef.current.add(p);
+    addVisitedPage(p);
   }
 
   function markCompleted(p: number) {
-    completedPagesRef.current.add(p);
-    persistSet(STORAGE_COMPLETED, completedPagesRef.current);
+    addCompletedPage(p);
   }
 
   useEffect(() => {
-    // Restore persisted visited/completed for continuity in demo mode.
     if (typeof window === "undefined") return;
-    const visited = loadStoredSet(STORAGE_VISITED);
-    const completed = loadStoredSet(STORAGE_COMPLETED);
-    pagesVisitedRef.current = visited.size ? visited : pagesVisitedRef.current;
-    completedPagesRef.current = completed;
+    // Keep this session counter isolated from persisted history.
+    sessionVisitedPagesRef.current = new Set([initialPage]);
     markVisited(initialPage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -240,6 +224,24 @@ export default function ReaderPage() {
     }));
   }, [content]);
 
+  const selectedTranslationKey = (readerPreferences.translationKey ?? "sahih") as TranslationKey;
+
+  useEffect(() => {
+    if (!readerPreferences.showTranslation) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const payload = await loadPageTranslations(page, selectedTranslationKey);
+        if (!cancelled) setPageTranslations(payload.verses ?? {});
+      } catch {
+        if (!cancelled) setPageTranslations({});
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [page, selectedTranslationKey, readerPreferences.showTranslation]);
+
   const pageSurahContext = useMemo(() => {
     const set = new Map<number, { en: string; ar: string }>();
     for (const a of ayahs) {
@@ -294,7 +296,7 @@ export default function ReaderPage() {
     if (deepLinkedPage === page) return;
     setDirection(deepLinkedPage >= page ? 1 : -1);
     setPage(deepLinkedPage);
-    pagesVisitedRef.current.add(deepLinkedPage);
+    sessionVisitedPagesRef.current.add(deepLinkedPage);
     minPageRef.current = Math.min(minPageRef.current, deepLinkedPage);
     maxPageRef.current = Math.max(maxPageRef.current, deepLinkedPage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -311,7 +313,8 @@ export default function ReaderPage() {
       for (let pp = page + 1; pp <= p; pp++) {
         if (awardedPagesRef.current.has(pp)) continue;
         awardedPagesRef.current.add(pp);
-        earned += getHasanatForSession(1, "pages");
+        const pc = getRuntimePage(pagesData, pp) ?? getPageContent(pp);
+        earned += estimateHasanatForPageContent(pc);
       }
       if (earned > 0) {
         liveEarnedHasanatRef.current += earned;
@@ -333,15 +336,9 @@ export default function ReaderPage() {
   // Create a reading session when leaving the reader (cleanup runs on unmount).
   useEffect(() => {
     const startTime = startTimeRef.current;
-    const visitedSet = pagesVisitedRef.current;
-    const persistCompleted = (p: number) => {
-      try {
-        completedPagesRef.current.add(p);
-        localStorage.setItem(STORAGE_COMPLETED, JSON.stringify(Array.from(completedPagesRef.current.values()).sort((a, b) => a - b)));
-      } catch {}
-    };
     return () => {
-      const pagesRead = visitedSet.size;
+      const visitedSet = sessionVisitedPagesRef.current;
+      const pagesRead = Number(visitedSet.size) || 0;
       if (pagesRead <= 0) return;
       const minP = minPageRef.current;
       const maxP = maxPageRef.current;
@@ -358,8 +355,19 @@ export default function ReaderPage() {
       const today = new Date();
       const todayStr = today.toISOString().split("T")[0];
       const todaySessions = currentSessions.filter((s) => isSameDay(new Date(s.completedAt), today));
-      const todayPagesSoFar = todaySessions.filter((s) => s.unit === "pages").reduce((a, s) => a + s.amount, 0);
-      const goalCompleted = currentGoal.unit === "pages" ? todayPagesSoFar + amount >= currentGoal.dailyAmount : false;
+      const todayPagesSoFar = todaySessions
+        .filter((s) => s.unit === "pages")
+        .reduce((a, s) => a + (Number(s.amount) || 0), 0);
+      const safeTarget = Math.max(1, Number(currentGoal.dailyAmount) || 1);
+      const nextPagesProgress = Math.max(0, todayPagesSoFar + amount);
+      const clampedPagesProgress = Math.min(nextPagesProgress, safeTarget);
+      const goalCompleted = currentGoal.unit === "pages" ? nextPagesProgress >= safeTarget : false;
+      console.log("[Reader progress update]", {
+        previousPageCount: todayPagesSoFar,
+        incrementAmount: amount,
+        newPageCount: nextPagesProgress,
+        displayedProgressValue: `${clampedPagesProgress}/${safeTarget}`,
+      });
 
       // Use the same earned amount we showed during page flips (prevents double-counting).
       const hasanat = liveEarnedHasanatRef.current;
@@ -383,7 +391,10 @@ export default function ReaderPage() {
       setLiveEarnedHasanat(0);
       awardedPagesRef.current = new Set();
       // Mark the last page as completed at end of session.
-      persistCompleted(lastPageRef.current);
+      const lp = lastPageRef.current;
+      if (lp) {
+        state.addCompletedPage(lp);
+      }
 
       if (goalCompleted) {
         const prev = currentStreak ?? { id: "streak-1", userId: "user-1", currentStreak: 0, longestStreak: 0, lastCompletedDate: null, updatedAt: new Date().toISOString() };
@@ -398,7 +409,10 @@ export default function ReaderPage() {
     };
   }, [goal]);
 
-  const pageHasanatEstimate = getHasanatForSession(1, "pages");
+  const pageHasanatEstimate = useMemo(() => {
+    const pc = getRuntimePage(pagesData, page) ?? getPageContent(page);
+    return estimateHasanatForPageContent(pc);
+  }, [pagesData, page]);
   const sessionsTotalHasanat = useMemo(
     () => (sessions ?? []).reduce((a, s) => a + (s.hasanat ?? 0), 0),
     [sessions]
@@ -580,10 +594,46 @@ export default function ReaderPage() {
 
                   <div className="flex items-center justify-between rounded-lg border p-3">
                     <div>
-                      <p className="text-sm font-medium">Translation (MVP)</p>
-                      <p className="text-xs text-muted-foreground">Show a simple translation where available.</p>
+                      <p className="text-sm font-medium">
+                        Translation {proStatus === "pro" ? "(MVP)" : "(Pro)"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {proStatus === "pro" ? "Show a simple translation where available." : "Upgrade to Pro to unlock translation."}
+                      </p>
                     </div>
-                    <Switch checked={readerPreferences.showTranslation} onCheckedChange={(checked) => setReaderPreferences({ showTranslation: checked })} />
+                    <Switch
+                      checked={readerPreferences.showTranslation}
+                      onCheckedChange={(checked) => {
+                        // Free users can turn translation off, but cannot turn it on.
+                        if (checked && proStatus !== "pro") {
+                          router.push(`/pricing?next=${encodeURIComponent("/reader")}`);
+                          return;
+                        }
+                        setReaderPreferences({ showTranslation: checked });
+                      }}
+                    />
+                  </div>
+
+                  <div className="space-y-2 rounded-lg border p-3">
+                    <Label>Translation source</Label>
+                    <Select
+                      value={selectedTranslationKey}
+                      onValueChange={(value) => setReaderPreferences({ translationKey: value as TranslationKey })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TRANSLATION_OPTIONS.map((option) => (
+                          <SelectItem key={option.key} value={option.key}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Verified source: Quran.com translations.
+                    </p>
                   </div>
 
                   <div className="rounded-lg border p-3">
@@ -684,19 +734,15 @@ export default function ReaderPage() {
                 </div>
 
                 <div className={cn("rounded-2xl border bg-card/50 p-4 sm:p-5", readerPreferences.focusMode && "border-transparent bg-transparent p-0")}>
-                  <div
-                    dir="rtl"
-                    className={cn(
-                      "font-arabic text-right leading-[2.35] tracking-wide",
-                      "text-[22px] sm:text-[24px]"
-                    )}
-                  >
+                  <div dir="rtl" className={cn("font-arabic text-right leading-[2.35] tracking-wide", "text-[22px] sm:text-[24px]")}>
                     {ayahs.map((a, idx) => {
                       const prev = ayahs[idx - 1];
                       const startsNewSurah = idx === 0 ? true : a.surahNumber !== prev?.surahNumber;
                       const playing = audio.currentAyahKey === `${a.surahNumber}:${a.ayahNumber}`;
+                      const verseKey = `${a.surahNumber}:${a.ayahNumber}`;
+                      const line = pageTranslations[verseKey] ?? null;
                       return (
-                        <span key={`${a.surahNumber}-${a.ayahNumber}-${idx}`}>
+                        <span key={`${a.surahNumber}-${a.ayahNumber}-${idx}`} className="block">
                           {startsNewSurah && a.surahNumber ? (
                             <span dir="ltr" className="block my-4 text-center">
                               <span className="inline-flex items-center gap-3">
@@ -734,23 +780,19 @@ export default function ReaderPage() {
                             <span>{a.text}</span>
                             {a.ayahNumber ? <AyahMarker n={a.ayahNumber} /> : null}
                           </span>
-                          <span> </span>
+                          {readerPreferences.showTranslation ? (
+                            <span dir="ltr" className="mt-1 block pl-1 text-[13px] leading-6 font-sans text-muted-foreground/95">
+                              <span className="mb-0.5 block text-[10px] uppercase tracking-wide text-muted-foreground/70">
+                                Translation
+                              </span>
+                              {line ?? (a.ayahNumber ? "—" : "")}
+                            </span>
+                          ) : null}
                         </span>
                       );
                     })}
                   </div>
                 </div>
-
-                {readerPreferences.showTranslation && content.translation && (
-                  <div className="mt-6 pt-4 border-t space-y-2">
-                    <p className="text-xs text-muted-foreground">Translation (MVP)</p>
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      {content.translation.map((line, i) => (
-                        <p key={i}>{line}</p>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </Card>
             </motion.div>
           </motion.div>
@@ -819,6 +861,8 @@ export default function ReaderPage() {
                   max={Math.max(1, audio.duration || 1)}
                   value={Math.min(audio.currentTime, audio.duration || 0)}
                   onChange={(e) => audio.seek(parseFloat(e.target.value))}
+                  aria-label="Seek audio position"
+                  title="Seek audio position"
                   className="w-full accent-[hsl(var(--primary))]"
                 />
                 <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground tabular-nums">

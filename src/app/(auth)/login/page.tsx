@@ -2,13 +2,17 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { safeAuthNextPath } from "@/lib/site-url";
 import { motion } from "framer-motion";
-import { createClient } from "@/lib/supabase/client";
+import { normalizeAuthEmail } from "@/lib/auth/email";
+import { createClient, SupabaseEnvError } from "@/lib/supabase/client";
+import { useAppStore } from "@/store/useAppStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { HidayahLogo } from "@/components/brand/hidayah-logo";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -16,23 +20,66 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
+  const searchParams = useSearchParams();
+  const setDemoMode = useAppStore((s) => s.setDemoMode);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!supabase) { setError("Sign-in is not configured. Add Supabase env vars."); return; }
+    // Match Supabase-stored identity: trim + lowercase email (see normalizeAuthEmail).
+    const emailNormalized = normalizeAuthEmail(email);
+    const passwordValue = password;
+
+    if (!emailNormalized || !passwordValue) {
+      setError("Please enter your email and password.");
+      return;
+    }
+
+    // Debug: confirm values are present (never log raw password in shared/production builds).
+    console.log("Attempting login:", emailNormalized, passwordValue ? `(password length: ${passwordValue.length})` : "(no password)");
+
+    let supabase;
+    try {
+      // Uses NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY via @/lib/supabase/client (createBrowserClient from @supabase/ssr).
+      supabase = createClient();
+    } catch (err) {
+      setError(err instanceof SupabaseEnvError ? err.message : "Could not initialize Supabase client.");
+      return;
+    }
+
     setError(null);
     setLoading(true);
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      email: emailNormalized,
+      password: passwordValue,
+    });
+
     setLoading(false);
-    if (signInError) { setError(signInError.message); return; }
-    router.push("/dashboard");
+
+    if (signInError) {
+      console.error("[Login] signInWithPassword failed:", signInError);
+      setError(signInError.message);
+      return;
+    }
+
+    console.log("[Login] success:", {
+      userId: data.user?.id,
+      email: data.user?.email,
+      hasSession: Boolean(data.session),
+    });
+
+    setDemoMode(false);
+    const next = safeAuthNextPath(searchParams.get("next"), "/dashboard");
+    router.push(next);
     router.refresh();
   }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
+        <div className="mb-8 flex justify-center">
+          <HidayahLogo size="md" tone="auto" />
+        </div>
         <Card className="border-0 shadow-lg">
           <CardHeader className="text-center">
             <CardTitle className="text-xl">Welcome back</CardTitle>
@@ -52,6 +99,11 @@ export default function LoginPage() {
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
               <Button type="submit" className="w-full" size="lg" disabled={loading}>{loading ? "Signing in…" : "Sign in"}</Button>
+              <p className="text-sm text-muted-foreground text-center">
+                <Link href="/forgot-password" className="text-primary font-medium hover:underline">
+                  Forgot password?
+                </Link>
+              </p>
               <p className="text-sm text-muted-foreground text-center">Don&apos;t have an account? <Link href="/signup" className="text-primary font-medium hover:underline">Sign up</Link></p>
             </CardFooter>
           </form>

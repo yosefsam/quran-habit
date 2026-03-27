@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -45,7 +45,13 @@ export default function OnboardingPage() {
     planIntensity: "moderate",
   });
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => {
+    try {
+      return createClient();
+    } catch {
+      return undefined;
+    }
+  }, []);
   const setOnboardingPreferences = useAppStore((s) => s.setOnboardingPreferences);
   const setUserGoal = useAppStore((s) => s.setUserGoal);
 

@@ -1,21 +1,31 @@
 import type { Metadata } from "next";
 import { Inter, Noto_Naskh_Arabic } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
+import { AppProviders } from "@/components/providers/app-providers";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const notoNaskhArabic = Noto_Naskh_Arabic({ subsets: ["arabic"], variable: "--font-arabic" });
 
+const site = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hidayah.io";
+
 export const metadata: Metadata = {
-  title: "Quran Habit — Build a consistent reading routine",
-  description: "Set daily goals, track streaks, and grow closer to the Quran with a habit-building app.",
+  metadataBase: new URL(site),
+  title: "Hidayah — Guided Quran reading & daily consistency",
+  description:
+    "Hidayah helps you build a steady relationship with the Quran: goals, streaks, bookmarks, and a calm reader—designed for simplicity and consistency.",
+  applicationName: "Hidayah",
+  openGraph: {
+    title: "Hidayah — Guided Quran reading",
+    description: "Daily goals, streaks, and a focused reader—stay consistent with the Quran.",
+    url: site,
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${notoNaskhArabic.variable} font-sans antialiased`}>
-        <ThemeProvider>{children}</ThemeProvider>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

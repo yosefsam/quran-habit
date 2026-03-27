@@ -4,11 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { createClient } from "@/lib/supabase/client";
+import { normalizeAuthEmail } from "@/lib/auth/email";
+import { createClient, SupabaseEnvError } from "@/lib/supabase/client";
+import { getAuthSiteUrl } from "@/lib/site-url";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { HidayahLogo } from "@/components/brand/hidayah-logo";
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("");
@@ -17,16 +20,33 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!supabase) { setError("Sign-up is not configured."); return; }
     if (password !== confirmPassword) { setError("Passwords do not match"); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters"); return; }
+    let supabase;
+    try {
+      supabase = createClient();
+    } catch (err) {
+      setError(err instanceof SupabaseEnvError ? err.message : "Could not initialize Supabase client.");
+      return;
+    }
     setError(null);
     setLoading(true);
-    const { error: signUpError } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${typeof window !== "undefined" ? window.location.origin : ""}/dashboard` } });
+    const emailNormalized = normalizeAuthEmail(email);
+    if (!emailNormalized) {
+      setLoading(false);
+      setError("Please enter a valid email.");
+      return;
+    }
+    const { error: signUpError } = await supabase.auth.signUp({
+      email: emailNormalized,
+      password,
+      options: {
+        emailRedirectTo: `${getAuthSiteUrl()}/auth/callback?next=/onboarding`,
+      },
+    });
     setLoading(false);
     if (signUpError) { setError(signUpError.message); return; }
     router.push("/onboarding");
@@ -36,6 +56,9 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
+        <div className="mb-8 flex justify-center">
+          <HidayahLogo size="md" tone="auto" />
+        </div>
         <Card className="border-0 shadow-lg">
           <CardHeader className="text-center">
             <CardTitle className="text-xl">Create your account</CardTitle>

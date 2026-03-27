@@ -1,6 +1,22 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { ReadingGoal, ReadingSession, Streak, Reminder, OnboardingPreferences, DailyStatus, Bookmark, LastReadPosition, ReaderPreferences } from "@/types";
+import type {
+  ReadingGoal,
+  ReadingSession,
+  Streak,
+  Reminder,
+  OnboardingPreferences,
+  DailyStatus,
+  Bookmark,
+  LastReadPosition,
+  ReaderPreferences,
+} from "@/types";
+import { clearLegacyReaderStorage } from "@/lib/reader-storage-legacy";
+import { setDemoCookieClient } from "@/lib/demo-cookie";
+
+function uniqueSortedPages(pages: number[]): number[] {
+  return Array.from(new Set(pages.filter((n) => n >= 1 && n <= 604))).sort((a, b) => a - b);
+}
 
 interface AppState {
   theme: "light" | "dark" | "system";
@@ -24,11 +40,33 @@ interface AppState {
   setTodayProgress: (n: number) => void;
 
   lastReadPosition: LastReadPosition | null;
-  setLastReadPosition: (p: LastReadPosition) => void;
+  setLastReadPosition: (p: LastReadPosition | null) => void;
   bookmarks: Bookmark[];
   toggleBookmark: (page: number) => void;
   readerPreferences: ReaderPreferences;
   setReaderPreferences: (p: Partial<ReaderPreferences>) => void;
+
+  /** Unique mushaf pages the user opened in the reader (tracked client-side). */
+  visitedPages: number[];
+  /** Unique mushaf pages marked "completed" when flipping forward (reading progress). */
+  completedPages: number[];
+  setVisitedPages: (pages: number[]) => void;
+  setCompletedPages: (pages: number[]) => void;
+  addVisitedPage: (page: number) => void;
+  addCompletedPage: (page: number) => void;
+
+  /** Pro subscription status (derived from Stripe webhook -> Supabase subscriptions). */
+  proStatus: "unknown" | "free" | "pro";
+  setProStatus: (s: "unknown" | "free" | "pro") => void;
+
+  /** Clears reading history, streak, page progress, sessions, and resume position. Bookmarks kept. */
+  resetReadingProgress: () => void;
+
+  /** Last authenticated Supabase user id persisted locally — used to avoid cross-user data bleed. */
+  persistedAuthUserId: string | null;
+  setPersistedAuthUserId: (id: string | null) => void;
+  /** Clear all user-specific data when account changes (includes bookmarks). */
+  clearDataForUserSwitch: () => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -38,7 +76,14 @@ export const useAppStore = create<AppState>()(
       setTheme: (theme) => set({ theme }),
       isDemo: false,
       setDemoMode: (isDemo, initialData) => {
-        if (isDemo && initialData) set({ isDemo: true, userGoal: initialData.goal, streak: initialData.streak, sessions: initialData.sessions });
+        setDemoCookieClient(isDemo);
+        if (isDemo && initialData)
+          set({
+            isDemo: true,
+            userGoal: initialData.goal,
+            streak: initialData.streak,
+            sessions: initialData.sessions,
+          });
         else set({ isDemo: false });
       },
       userGoal: null,
@@ -67,20 +112,83 @@ export const useAppStore = create<AppState>()(
           const b: Bookmark = { id: `bm-${Date.now()}`, userId: "user-1", page, createdAt: new Date().toISOString() };
           return { bookmarks: [b, ...s.bookmarks] };
         }),
-      readerPreferences: { focusMode: false, showTranslation: false, fontScale: 1 },
+      readerPreferences: { focusMode: false, showTranslation: false, translationKey: "sahih", fontScale: 1 },
       setReaderPreferences: (p) => set((s) => ({ readerPreferences: { ...s.readerPreferences, ...p } })),
+
+      visitedPages: [],
+      completedPages: [],
+      setVisitedPages: (pages) => set({ visitedPages: uniqueSortedPages(pages) }),
+      setCompletedPages: (pages) => set({ completedPages: uniqueSortedPages(pages) }),
+      addVisitedPage: (page) =>
+        set((s) => {
+          if (page < 1 || page > 604) return {};
+          if (s.visitedPages.includes(page)) return {};
+          return { visitedPages: uniqueSortedPages([...s.visitedPages, page]) };
+        }),
+      addCompletedPage: (page) =>
+        set((s) => {
+          if (page < 1 || page > 604) return {};
+          if (s.completedPages.includes(page)) return {};
+          return { completedPages: uniqueSortedPages([...s.completedPages, page]) };
+        }),
+
+      resetReadingProgress: () => {
+        clearLegacyReaderStorage();
+        set({
+          sessions: [],
+          streak: null,
+          visitedPages: [],
+          completedPages: [],
+          lastReadPosition: null,
+          todayProgress: 0,
+          todayStatus: "none",
+          proStatus: "unknown",
+        });
+      },
+
+      persistedAuthUserId: null,
+      setPersistedAuthUserId: (persistedAuthUserId) => set({ persistedAuthUserId }),
+      clearDataForUserSwitch: () => {
+        clearLegacyReaderStorage();
+        set({
+          sessions: [],
+          streak: null,
+          visitedPages: [],
+          completedPages: [],
+          lastReadPosition: null,
+          todayProgress: 0,
+          todayStatus: "none",
+          bookmarks: [],
+          userGoal: null,
+          onboardingPreferences: null,
+          reminder: null,
+          isDemo: false,
+          proStatus: "unknown",
+        });
+        setDemoCookieClient(false);
+      },
+
+      proStatus: "unknown",
+      setProStatus: (proStatus) => set({ proStatus }),
     }),
     {
-      name: "quranly-app",
+      name: "hidayah-app",
       partialize: (s) => ({
         theme: s.theme,
         isDemo: s.isDemo,
-        userGoal: s.isDemo ? s.userGoal : undefined,
-        sessions: s.isDemo ? s.sessions : undefined,
-        streak: s.isDemo ? s.streak : undefined,
-        lastReadPosition: s.isDemo ? s.lastReadPosition : undefined,
-        bookmarks: s.isDemo ? s.bookmarks : undefined,
+        userGoal: s.userGoal,
+        sessions: s.sessions,
+        streak: s.streak,
+        reminder: s.reminder,
+        onboardingPreferences: s.onboardingPreferences,
+        todayStatus: s.todayStatus,
+        todayProgress: s.todayProgress,
+        lastReadPosition: s.lastReadPosition,
+        bookmarks: s.bookmarks,
+        visitedPages: s.visitedPages,
+        completedPages: s.completedPages,
         readerPreferences: s.readerPreferences,
+        persistedAuthUserId: s.persistedAuthUserId,
       }),
     }
   )
