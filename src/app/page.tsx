@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useAppStore } from "@/store/useAppStore";
 import { demoGoal, demoStreak, demoSessions } from "@/lib/demo-data";
+import { createClient } from "@/lib/supabase/client";
 import {
   BookOpen,
   Target,
@@ -27,10 +29,28 @@ import { LandingFooter } from "@/components/landing/landing-footer";
 export default function LandingPage() {
   const router = useRouter();
   const setDemoMode = useAppStore((s) => s.setDemoMode);
+  const supabase = useMemo(() => {
+    try {
+      return createClient();
+    } catch {
+      return undefined;
+    }
+  }, []);
 
   function startDemo() {
     setDemoMode(true, { goal: demoGoal, streak: demoStreak, sessions: demoSessions });
     router.push("/dashboard");
+  }
+
+  async function startUpgrade() {
+    if (!supabase) {
+      router.push("/login?next=%2Fpricing");
+      return;
+    }
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    router.push(session ? "/pricing" : "/login?next=%2Fpricing");
   }
 
   return (
@@ -119,7 +139,18 @@ export default function LandingPage() {
                   Get started free <ChevronRight className="ml-1 h-5 w-5" />
                 </Link>
               </Button>
+              <Button
+                onClick={startUpgrade}
+                size="lg"
+                variant="outline"
+                className="w-full border-emerald-500/40 bg-emerald-500/10 text-emerald-100 hover:bg-emerald-500/20 sm:w-auto"
+              >
+                Upgrade to Pro
+              </Button>
             </motion.div>
+            <p className="mt-3 text-xs text-zinc-500">
+              Free accounts include daily reader/session limits. Upgrade to Pro for uninterrupted usage.
+            </p>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

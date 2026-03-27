@@ -39,13 +39,21 @@ export default function PricingPage() {
         return;
       }
       const res = await fetch("/api/stripe/checkout", { method: "POST", credentials: "include" });
-      const body = await res.json();
+      const body = (await res.json().catch(() => null)) as { error?: string; url?: string } | null;
+      if (res.status === 401) {
+        window.location.href = `/login?next=${encodeURIComponent(nextPath || "/pricing")}`;
+        return;
+      }
       if (!res.ok) {
-        setError(body.error ?? "Checkout unavailable");
+        setError(body?.error ?? "Checkout unavailable");
         setLoading(false);
         return;
       }
-      if (body.url) window.location.href = body.url;
+      if (body?.url) {
+        window.location.href = body.url;
+        return;
+      }
+      setError("Checkout unavailable");
     } catch {
       setError("Something went wrong. Try again.");
     } finally {
@@ -85,20 +93,43 @@ export default function PricingPage() {
         </motion.div>
 
         <Card className="border-white/10 bg-zinc-900/50 backdrop-blur">
-          <CardHeader>
-            <CardTitle className="text-xl">Premium</CardTitle>
-            <CardDescription className="text-zinc-400">
-              Monthly Pro subscription via Stripe. Cancel anytime from your account.
-            </CardDescription>
+          <CardHeader className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="rounded-lg border border-white/10 bg-zinc-900/50 p-4">
+                <CardTitle className="text-base">Free</CardTitle>
+                <CardDescription className="mt-1 text-zinc-400">
+                  Core reader and tracking, with daily limits on reader/session usage.
+                </CardDescription>
+              </div>
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4">
+                <CardTitle className="text-base text-emerald-200">Pro</CardTitle>
+                <CardDescription className="mt-1 text-emerald-100/80">
+                  Removes free limits and unlocks premium subscription status.
+                </CardDescription>
+              </div>
+            </div>
+            <div>
+              <CardTitle className="text-xl">Pro unlocks</CardTitle>
+              <CardDescription className="text-zinc-400">
+                Monthly Pro subscription via Stripe. Cancel anytime from your account portal.
+              </CardDescription>
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
-            {["Priority roadmap input", "Premium badge on profile", "Funds ongoing Quran tooling"].map((f) => (
+            {[
+              "Unlimited reading beyond free daily limits",
+              "Unlimited guided sessions beyond free daily limits",
+              "Premium badge and Pro-gated features as released",
+            ].map((f) => (
               <div key={f} className="flex items-center gap-2 text-sm text-zinc-300">
                 <Check className="h-4 w-4 text-emerald-400 shrink-0" />
                 {f}
               </div>
             ))}
-            {error && <p className="text-sm text-red-400 bg-red-400/10 rounded-lg p-3">{error}</p>}
+            <p className="rounded-lg border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+              Why Pro exists: free/demo mode is intentionally limited daily to keep the service sustainable.
+            </p>
+            {error && <p className="rounded-lg bg-red-400/10 p-3 text-sm text-red-400">{error}</p>}
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
             <Button

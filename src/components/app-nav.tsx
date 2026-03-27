@@ -45,6 +45,18 @@ export function AppNav() {
             </Link>
           );
         })}
+        {proStatus === "free" ? (
+          <Link
+            href="/pricing?next=%2Freader"
+            className={cn(
+              "flex flex-col items-center justify-center gap-1 rounded-lg px-4 py-2 text-xs font-medium transition-colors md:flex-row md:gap-2 md:px-3",
+              pathname.startsWith("/pricing") ? "text-primary" : "text-emerald-500 hover:text-emerald-400"
+            )}
+          >
+            <Crown className="h-5 w-5 md:h-4 md:w-4" />
+            <span>Upgrade</span>
+          </Link>
+        ) : null}
       </div>
     </nav>
   );
