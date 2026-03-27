@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getUserSubscriptionStatus } from "@/lib/subscription/getUserSubscriptionStatus";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const supabase = await createClient();
   if (!supabase) return NextResponse.json({ error: "Not configured" }, { status: 501 });
