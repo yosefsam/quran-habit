@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { DEMO_COOKIE_NAME } from "@/lib/demo-cookie";
+import { isLikelySupabaseProjectMismatch, resolveSupabasePublicEnv } from "@/lib/supabase/env";
 
 const PROTECTED_PREFIXES = [
   "/dashboard",
@@ -64,10 +65,12 @@ function isPrefetchRequest(request: NextRequest): boolean {
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const { url, publicKey: key } = resolveSupabasePublicEnv();
 
   if (!url || !key) {
+    return supabaseResponse;
+  }
+  if (isLikelySupabaseProjectMismatch(url, key)) {
     return supabaseResponse;
   }
 

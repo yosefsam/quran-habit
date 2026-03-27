@@ -1,4 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
+import { isLikelySupabaseProjectMismatch, resolveSupabasePublicEnv } from "@/lib/supabase/env";
 
 /**
  * Thrown when NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY are missing.
@@ -7,7 +8,7 @@ import { createBrowserClient } from "@supabase/ssr";
 export class SupabaseEnvError extends Error {
   constructor() {
     super(
-      "Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. Copy env.example to .env.local, add your Supabase URL and anon key, then restart the dev server (npm run dev)."
+      "Missing NEXT_PUBLIC_SUPABASE_URL and a public Supabase key. Set NEXT_PUBLIC_SUPABASE_ANON_KEY (or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY), then restart the dev server."
     );
     this.name = "SupabaseEnvError";
   }
@@ -19,8 +20,7 @@ let browserClient: ReturnType<typeof createBrowserClient> | undefined;
  * Browser Supabase client (singleton). Always returns a valid client or throws — never null.
  */
 export function createClient(): ReturnType<typeof createBrowserClient> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  const { url, publicKey: key } = resolveSupabasePublicEnv();
 
   if (process.env.NODE_ENV === "development") {
     console.log("[Supabase client]", {
@@ -33,6 +33,11 @@ export function createClient(): ReturnType<typeof createBrowserClient> {
 
   if (!url || !key) {
     throw new SupabaseEnvError();
+  }
+  if (isLikelySupabaseProjectMismatch(url, key)) {
+    throw new Error(
+      "Supabase URL and public key appear to belong to different projects. Verify NEXT_PUBLIC_SUPABASE_URL with NEXT_PUBLIC_SUPABASE_ANON_KEY (or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)."
+    );
   }
 
   if (!browserClient) {

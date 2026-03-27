@@ -1,11 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { isLikelySupabaseProjectMismatch, resolveSupabasePublicEnv } from "@/lib/supabase/env";
 
 export async function createClient() {
   const cookieStore = await cookies();
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const { url, publicKey: key } = resolveSupabasePublicEnv();
   if (!url || !key) return null as unknown as ReturnType<typeof createServerClient>;
+  if (isLikelySupabaseProjectMismatch(url, key)) return null as unknown as ReturnType<typeof createServerClient>;
   return createServerClient(url, key, {
     cookies: {
       getAll: () => cookieStore.getAll(),

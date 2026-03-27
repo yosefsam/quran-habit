@@ -89,7 +89,8 @@ Copy `env.example` → `.env.local` (local) or set in Vercel → Project → Set
 |----------|---------|
 | `NEXT_PUBLIC_SITE_URL` | Canonical URL, e.g. `https://hidayah.io` (auth redirects, Stripe return URLs, metadata) |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key (client-safe) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key (client-safe). |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Optional alternative to anon key (new Supabase key format). |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Server only** — Stripe webhooks upsert subscription rows |
 | `STRIPE_SECRET_KEY` | Stripe secret key |
 | `STRIPE_WEBHOOK_SECRET` | Signing secret from Stripe Dashboard → Webhooks |
