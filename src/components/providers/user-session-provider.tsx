@@ -116,5 +116,21 @@ export function UserSessionProvider({ children }: { children: React.ReactNode })
     setTodayStatus,
   ]);
 
+  useEffect(() => {
+    if (!supabase || isDemo || !persistedAuthUserId) return;
+    const refreshPro = async () => {
+      const res = await fetch("/api/reading-state", { credentials: "include" });
+      if (!res.ok) return;
+      const row = (await res.json()) as { subscription?: { isPro?: boolean } };
+      if (row.subscription?.isPro === true) setProStatus("pro");
+      else if (row.subscription?.isPro === false) setProStatus("free");
+    };
+    const onVis = () => {
+      if (document.visibilityState === "visible") void refreshPro();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [supabase, isDemo, persistedAuthUserId, setProStatus]);
+
   return <>{children}</>;
 }

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Home, BookOpen, BarChart3, User, Lock, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/useAppStore";
+import { SubscriptionTierBadge } from "@/components/subscription/subscription-tier-badge";
 
 const navItems = [
   { href: "/dashboard", label: "Home", icon: Home },
@@ -19,6 +20,8 @@ export function AppNav() {
   const pathname = usePathname();
   const proStatus = useAppStore((s) => s.proStatus);
   if (hideNavPaths.some((p) => pathname.startsWith(p))) return null;
+
+  const tier = proStatus === "pro" ? "pro" : proStatus === "free" ? "free" : "unknown";
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur md:relative md:border-0">
@@ -57,6 +60,9 @@ export function AppNav() {
             <span>Upgrade</span>
           </Link>
         ) : null}
+        <div className="hidden md:flex md:items-center md:pl-2 md:ml-1 md:border-l md:border-border">
+          <SubscriptionTierBadge tier={tier} />
+        </div>
       </div>
     </nav>
   );

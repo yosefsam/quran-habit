@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/store/useAppStore";
@@ -15,11 +15,13 @@ import { User, Target, Bell, Palette, LogOut, BookOpen, CreditCard } from "lucid
 import { useEffect, useMemo, useState } from "react";
 import { HidayahLogo } from "@/components/brand/hidayah-logo";
 import { ResetReadingProgressDialog } from "@/components/reset-reading-progress-dialog";
+import { SubscriptionTierBadge } from "@/components/subscription/subscription-tier-badge";
 
 const unitLabel: Record<string, string> = { pages: "Pages", ayahs: "Verses", minutes: "Minutes", surahs: "Surahs" };
 
 export default function ProfilePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = useMemo(() => {
     try {
       return createClient();
@@ -38,7 +40,10 @@ export default function ProfilePage() {
   const lastReadPosition = useAppStore((s) => s.lastReadPosition);
   const clearDataForUserSwitch = useAppStore((s) => s.clearDataForUserSwitch);
   const setPersistedAuthUserId = useAppStore((s) => s.setPersistedAuthUserId);
+  const proStatus = useAppStore((s) => s.proStatus);
+  const setProStatus = useAppStore((s) => s.setProStatus);
   const [subscriptionTier, setSubscriptionTier] = useState<string | null>(null);
+  const [confirmingPro, setConfirmingPro] = useState(false);
 
   useEffect(() => {
     if (!supabase) return;
@@ -49,6 +54,29 @@ export default function ProfilePage() {
       setSubscriptionTier(data?.subscription_tier ?? "free");
     })();
   }, [supabase]);
+
+  useEffect(() => {
+    if (searchParams.get("subscription") !== "success") return;
+    setConfirmingPro(true);
+    let n = 0;
+    const id = window.setInterval(async () => {
+      n += 1;
+      const res = await fetch("/api/reading-state", { credentials: "include" });
+      const row = (await res.json().catch(() => ({}))) as { subscription?: { isPro?: boolean } };
+      if (row.subscription?.isPro === true) {
+        setProStatus("pro");
+        setConfirmingPro(false);
+        router.replace("/profile");
+        window.clearInterval(id);
+        return;
+      }
+      if (n >= 24) {
+        setConfirmingPro(false);
+        window.clearInterval(id);
+      }
+    }, 2500);
+    return () => window.clearInterval(id);
+  }, [searchParams, router, setProStatus]);
 
   async function openBillingPortal() {
     const res = await fetch("/api/stripe/portal", { method: "POST", credentials: "include" });
@@ -99,14 +127,21 @@ export default function ProfilePage() {
             <CardDescription>Subscription & billing (Stripe)</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-sm">
-              Current plan:{" "}
-              <span className="font-semibold capitalize">{subscriptionTier ?? "…"}</span>
-              {subscriptionTier === "premium" ? (
-                <span className="ml-2 inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-300">
-                  Pro
-                </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm text-muted-foreground">Current plan</p>
+              <SubscriptionTierBadge
+                tier={proStatus === "pro" ? "pro" : proStatus === "free" ? "free" : "unknown"}
+                syncing={confirmingPro}
+              />
+              {subscriptionTier ? (
+                <span className="text-xs text-muted-foreground capitalize">({subscriptionTier})</span>
               ) : null}
+            </div>
+            {confirmingPro ? (
+              <p className="text-xs text-muted-foreground">Confirming your subscription with Stripe…</p>
+            ) : null}
+            <p className="text-sm text-muted-foreground">
+              Free accounts have a small daily limit on reader and session usage. Pro is unlimited for those flows.
             </p>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" asChild>
@@ -117,7 +152,7 @@ export default function ProfilePage() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Premium status is verified server-side. Configure Stripe keys in production to enable checkout.
+              Premium status is verified server-side (Supabase + Stripe). If you just paid, status may take a few seconds.
             </p>
           </CardContent>
         </Card>

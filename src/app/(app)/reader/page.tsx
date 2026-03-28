@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAppStore } from "@/store/useAppStore";
 import { demoGoal } from "@/lib/demo-data";
@@ -24,8 +24,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bookmark, BookmarkCheck, ChevronDown, ChevronLeft, ChevronRight, Home, Settings2, Pause, Play, SkipBack, SkipForward, Volume2 } from "lucide-react";
 import { cn, isSameDay } from "@/lib/utils";
 import { useQuranAudioPlayer } from "@/hooks/useQuranAudioPlayer";
+import { SubscriptionTierBadge } from "@/components/subscription/subscription-tier-badge";
+import { FreeLimitPaywallDialog } from "@/components/subscription/free-limit-paywall-dialog";
 
 const SWIPE_THRESHOLD = 60;
+const DEFAULT_FREE_LIMIT = 3;
 
 export default function ReaderPage() {
   const searchParams = useSearchParams();
@@ -47,6 +50,66 @@ export default function ReaderPage() {
   const addVisitedPage = useAppStore((s) => s.addVisitedPage);
   const addCompletedPage = useAppStore((s) => s.addCompletedPage);
   const proStatus = useAppStore((s) => s.proStatus);
+  const isDemo = useAppStore((s) => s.isDemo);
+  const persistedAuthUserId = useAppStore((s) => s.persistedAuthUserId);
+
+  const [paywallOpen, setPaywallOpen] = useState(false);
+  const [freeLimitMeta, setFreeLimitMeta] = useState<{ used: number; limit: number }>({ used: 0, limit: DEFAULT_FREE_LIMIT });
+
+  const consumeFreeTierNav = useCallback(async (): Promise<boolean> => {
+    if (isDemo || !persistedAuthUserId) return true;
+    if (proStatus === "pro") return true;
+    const res = await fetch("/api/usage/free-daily-increment", { method: "POST", credentials: "include" });
+    const body = (await res.json().catch(() => ({}))) as { used?: number; limit?: number; limitReached?: boolean };
+    if (typeof body.limit === "number") {
+      setFreeLimitMeta((m) => ({ used: body.used ?? m.used, limit: body.limit }));
+    }
+    if (res.status === 429 && body.limitReached) {
+      setFreeLimitMeta({ used: body.used ?? DEFAULT_FREE_LIMIT, limit: body.limit ?? DEFAULT_FREE_LIMIT });
+      setPaywallOpen(true);
+      return false;
+    }
+    if (res.ok && typeof body.used === "number" && typeof body.limit === "number") {
+      setFreeLimitMeta({ used: body.used, limit: body.limit });
+    }
+    return true;
+  }, [isDemo, persistedAuthUserId, proStatus]);
+
+  useEffect(() => {
+    if (isDemo || !persistedAuthUserId) return;
+    let cancelled = false;
+    (async () => {
+      const res = await fetch("/api/reading-state", { credentials: "include" });
+      if (!res.ok || cancelled) return;
+      const row = (await res.json()) as { freeUsage?: { used: number; limit: number } };
+      if (row.freeUsage && typeof row.freeUsage.used === "number") {
+        setFreeLimitMeta({
+          used: row.freeUsage.used,
+          limit: row.freeUsage.limit ?? DEFAULT_FREE_LIMIT,
+        });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isDemo, persistedAuthUserId]);
+
+  const initialPageFreeCountedRef = useRef(false);
+  useEffect(() => {
+    if (initialPageFreeCountedRef.current) return;
+    if (isDemo || !persistedAuthUserId || proStatus === "pro") return;
+    initialPageFreeCountedRef.current = true;
+    void (async () => {
+      const res = await fetch("/api/usage/free-daily-increment", { method: "POST", credentials: "include" });
+      const body = (await res.json().catch(() => ({}))) as { used?: number; limit?: number; limitReached?: boolean };
+      if (typeof body.limit === "number") {
+        setFreeLimitMeta((m) => ({ used: body.used ?? m.used, limit: body.limit }));
+      }
+      if (res.status === 429 && body.limitReached) {
+        setPaywallOpen(true);
+      }
+    })();
+  }, [isDemo, persistedAuthUserId, proStatus]);
 
   const deepLinked = searchParams.get("page");
   const deepLinkedPage = deepLinked ? clampPage(parseInt(deepLinked, 10)) : null;
@@ -119,12 +182,18 @@ export default function ReaderPage() {
 
   function setPageWithoutReward(nextPage: number) {
     const p = clampPage(nextPage);
-    setDirection(p >= page ? 1 : -1);
-    setPage(p);
-    markVisited(p);
-    minPageRef.current = Math.min(minPageRef.current, p);
-    maxPageRef.current = Math.max(maxPageRef.current, p);
-    lastPageRef.current = p;
+    const fromPage = page;
+    if (p === fromPage) return;
+    void (async () => {
+      const ok = await consumeFreeTierNav();
+      if (!ok) return;
+      setDirection(p >= fromPage ? 1 : -1);
+      setPage(p);
+      markVisited(p);
+      minPageRef.current = Math.min(minPageRef.current, p);
+      maxPageRef.current = Math.max(maxPageRef.current, p);
+      lastPageRef.current = p;
+    })();
   }
 
   function markVisited(p: number) {
@@ -304,33 +373,36 @@ export default function ReaderPage() {
 
   function goToPage(next: number, dir: 1 | -1) {
     const p = clampPage(next);
-    // Mark the page we are leaving as completed when we move forward.
-    const prevPage = lastPageRef.current;
-    // Award hasanat estimate only on forward flips.
-    if (p > page) {
-      if (prevPage && prevPage !== p) markCompleted(prevPage);
-      let earned = 0;
-      for (let pp = page + 1; pp <= p; pp++) {
-        if (awardedPagesRef.current.has(pp)) continue;
-        awardedPagesRef.current.add(pp);
-        const pc = getRuntimePage(pagesData, pp) ?? getPageContent(pp);
-        earned += estimateHasanatForPageContent(pc);
+    const fromPage = page;
+    if (p === fromPage) return;
+    void (async () => {
+      const ok = await consumeFreeTierNav();
+      if (!ok) return;
+      const prevPage = lastPageRef.current;
+      if (p > fromPage) {
+        if (prevPage && prevPage !== p) markCompleted(prevPage);
+        let earned = 0;
+        for (let pp = fromPage + 1; pp <= p; pp++) {
+          if (awardedPagesRef.current.has(pp)) continue;
+          awardedPagesRef.current.add(pp);
+          const pc = getRuntimePage(pagesData, pp) ?? getPageContent(pp);
+          earned += estimateHasanatForPageContent(pc);
+        }
+        if (earned > 0) {
+          liveEarnedHasanatRef.current += earned;
+          setLiveEarnedHasanat(liveEarnedHasanatRef.current);
+          const toastId = `${Date.now()}-${fromPage}->${p}`;
+          setEarnedToast({ amount: earned, id: toastId });
+          window.setTimeout(() => setEarnedToast((t) => (t?.id === toastId ? null : t)), 1400);
+        }
       }
-      if (earned > 0) {
-        liveEarnedHasanatRef.current += earned;
-        setLiveEarnedHasanat(liveEarnedHasanatRef.current);
-        // Hide toast after a moment (use id check so rapid flips don't flicker).
-        const toastId = `${Date.now()}-${page}->${p}`;
-        setEarnedToast({ amount: earned, id: toastId });
-        window.setTimeout(() => setEarnedToast((t) => (t?.id === toastId ? null : t)), 1400);
-      }
-    }
-    setDirection(dir);
-    setPage(p);
-    markVisited(p);
-    minPageRef.current = Math.min(minPageRef.current, p);
-    maxPageRef.current = Math.max(maxPageRef.current, p);
-    lastPageRef.current = p;
+      setDirection(dir);
+      setPage(p);
+      markVisited(p);
+      minPageRef.current = Math.min(minPageRef.current, p);
+      maxPageRef.current = Math.max(maxPageRef.current, p);
+      lastPageRef.current = p;
+    })();
   }
 
   // Create a reading session when leaving the reader (cleanup runs on unmount).
@@ -448,6 +520,19 @@ export default function ReaderPage() {
             <Button variant="ghost" size="icon" onClick={() => toggleBookmark(page)} aria-label={isBookmarked ? "Remove bookmark" : "Add bookmark"}>
               {isBookmarked ? <BookmarkCheck className="h-5 w-5 text-primary" /> : <Bookmark className="h-5 w-5" />}
             </Button>
+          )}
+
+          {!readerPreferences.focusMode && persistedAuthUserId && !isDemo && (
+            <div className="flex flex-col items-end gap-0.5 shrink-0">
+              <SubscriptionTierBadge tier={proStatus === "pro" ? "pro" : proStatus === "free" ? "free" : "unknown"} />
+              {proStatus !== "pro" ? (
+                <span className="text-[10px] text-muted-foreground tabular-nums">
+                  Today {freeLimitMeta.used}/{freeLimitMeta.limit} free
+                </span>
+              ) : (
+                <span className="text-[10px] text-emerald-600/90 dark:text-emerald-400/90">Unlimited</span>
+              )}
+            </div>
           )}
 
           {!readerPreferences.focusMode && (
@@ -884,6 +969,14 @@ export default function ReaderPage() {
           </div>
         </div>
       )}
+
+      <FreeLimitPaywallDialog
+        open={paywallOpen}
+        onOpenChange={setPaywallOpen}
+        used={freeLimitMeta.used}
+        limit={freeLimitMeta.limit}
+        nextPath="/reader"
+      />
     </div>
   );
 }

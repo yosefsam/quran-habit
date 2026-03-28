@@ -98,13 +98,14 @@ export default function PricingPage() {
               <div className="rounded-lg border border-white/10 bg-zinc-900/50 p-4">
                 <CardTitle className="text-base">Free</CardTitle>
                 <CardDescription className="mt-1 text-zinc-400">
-                  Core reader and tracking, with daily limits on reader/session usage.
+                  Full core experience with a small daily allowance on reader and session (default: 3 actions/day — resets
+                  daily; configurable server-side).
                 </CardDescription>
               </div>
               <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4">
                 <CardTitle className="text-base text-emerald-200">Pro</CardTitle>
                 <CardDescription className="mt-1 text-emerald-100/80">
-                  Removes free limits and unlocks premium subscription status.
+                  Unlimited reader and session usage for the day, Pro badge, and premium features as we ship them.
                 </CardDescription>
               </div>
             </div>

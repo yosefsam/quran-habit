@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { DEMO_COOKIE_NAME } from "@/lib/demo-cookie";
 import { isLikelySupabaseProjectMismatch, resolveSupabasePublicEnv } from "@/lib/supabase/env";
+import { getFreeDailyReaderLimit } from "@/lib/subscription/freeTierLimits";
 
 const PROTECTED_PREFIXES = [
   "/dashboard",
@@ -48,13 +49,6 @@ function isFreeLimitedPath(pathname: string): boolean {
   return FREE_LIMIT_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
 
-function getFreeDailyLimit(): number {
-  const raw = process.env.FREE_DAILY_READER_LIMIT;
-  const parsed = raw ? Number.parseInt(raw, 10) : NaN;
-  if (Number.isFinite(parsed) && parsed > 0) return parsed;
-  return 3;
-}
-
 function isPrefetchRequest(request: NextRequest): boolean {
   const purpose = request.headers.get("purpose")?.toLowerCase();
   if (purpose === "prefetch") return true;
@@ -93,7 +87,7 @@ export async function updateSession(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
   const demo = request.cookies.get(DEMO_COOKIE_NAME)?.value === "1";
-  const freeDailyLimit = getFreeDailyLimit();
+  const freeDailyLimit = getFreeDailyReaderLimit();
   const prefetch = isPrefetchRequest(request);
 
   // Pro-only route gate (Stripe subscription).
@@ -205,16 +199,7 @@ export async function updateSession(request: NextRequest) {
         pricing.searchParams.set("next", pathname + request.nextUrl.search);
         return NextResponse.redirect(pricing);
       }
-
-      await supabase.from("free_usage_daily").upsert(
-        {
-          user_id: user.id,
-          usage_date: today,
-          reader_visits: current + 1,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,usage_date" }
-      );
+      // Free-tier usage is incremented via POST /api/usage/free-daily-increment (reader + session SPA navigation).
     }
   }
 
