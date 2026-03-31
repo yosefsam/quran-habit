@@ -31,9 +31,9 @@ export async function POST() {
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${site}/profile?subscription=success`,
     cancel_url: `${site}/pricing?canceled=1`,
+    client_reference_id: user.id,
     metadata: { user_id: user.id },
     subscription_data: { metadata: { user_id: user.id } },
-    client_reference_id: user.id,
   };
 
   if (profile?.stripe_customer_id) params.customer = profile.stripe_customer_id;
