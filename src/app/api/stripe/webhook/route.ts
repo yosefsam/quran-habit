@@ -38,15 +38,46 @@ export async function POST(request: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
+        const userId =
+          (typeof session.client_reference_id === "string" && session.client_reference_id
+            ? session.client_reference_id
+            : null) ??
+          (typeof session.metadata?.user_id === "string" && session.metadata.user_id ? session.metadata.user_id : null);
+
         const subscriptionId = subscriptionIdFromSession(session);
         if (subscriptionId) {
           const sub = await stripe.subscriptions.retrieve(subscriptionId);
           await syncStripeSubscriptionToSupabase(admin, sub);
         } else {
-          const userId = session.metadata?.user_id ?? session.client_reference_id ?? null;
           const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id ?? null;
           if (userId && customerId) {
-            await admin.from("profiles").update({ stripe_customer_id: customerId }).eq("id", userId);
+            const { error: custErr } = await admin.from("profiles").update({ stripe_customer_id: customerId }).eq("id", userId);
+            if (custErr) {
+              console.error("[stripe webhook] checkout.session.completed: stripe_customer_id update failed", {
+                userId,
+                message: custErr.message,
+              });
+            }
+          }
+        }
+
+        if (!userId) {
+          console.error(
+            "[stripe webhook] checkout.session.completed: missing user id (expected client_reference_id or metadata.user_id)",
+            { sessionId: session.id }
+          );
+        } else {
+          const { error: profileErr } = await admin.from("profiles").update({
+            is_pro: true,
+            subscription_status: "active",
+          }).eq("id", userId);
+          if (profileErr) {
+            console.error("[stripe webhook] checkout.session.completed: Supabase profiles update failed", {
+              userId,
+              message: profileErr.message,
+              code: profileErr.code,
+            });
+            return NextResponse.json({ error: "Profile update failed" }, { status: 500 });
           }
         }
         break;
