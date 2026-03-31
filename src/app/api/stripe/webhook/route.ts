@@ -21,6 +21,16 @@ function userIdFromCheckoutSession(session: Stripe.Checkout.Session): string | n
   return null;
 }
 
+/** Log full PostgREST / Supabase error (e.g. PGRST205) for Vercel debugging. */
+function logSupabaseError(context: string, err: { message: string; code?: string; details?: string; hint?: string }) {
+  console.error(`[stripe webhook] ${context}`, {
+    code: err.code,
+    message: err.message,
+    details: err.details,
+    hint: err.hint,
+  });
+}
+
 export async function POST(request: Request) {
   const stripe = getStripe();
   const whSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -40,6 +50,11 @@ export async function POST(request: Request) {
   }
 
   console.log("[stripe webhook] received event", { type: event.type, id: event.id });
+
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
+    console.error("[stripe webhook] SUPABASE_SERVICE_ROLE_KEY is missing; webhook must use service role, not anon key");
+    return NextResponse.json({ error: "Server misconfigured" }, { status: 501 });
+  }
 
   const admin = createAdminClient();
   if (!admin) return NextResponse.json({ error: "Server misconfigured" }, { status: 501 });
@@ -81,15 +96,23 @@ export async function POST(request: Request) {
 
         const { error: profileErr } = await admin.from("profiles").update(profileUpdate).eq("id", userId);
         if (profileErr) {
-          console.error("[stripe webhook] checkout.session.completed: Supabase profiles update failed", {
+          logSupabaseError("checkout.session.completed: profiles update failed", profileErr);
+          const upsertRow = {
+            id: userId,
+            ...profileUpdate,
+            updated_at: new Date().toISOString(),
+          };
+          const { error: upsertErr } = await admin.from("profiles").upsert(upsertRow, { onConflict: "id" });
+          if (upsertErr) {
+            logSupabaseError("checkout.session.completed: profiles upsert fallback failed", upsertErr);
+            return NextResponse.json({ error: "Profile update failed" }, { status: 500 });
+          }
+          console.log("[stripe webhook] checkout.session.completed: profiles upsert success (after update failed)", {
             userId,
-            message: profileErr.message,
-            code: profileErr.code,
           });
-          return NextResponse.json({ error: "Profile update failed" }, { status: 500 });
+        } else {
+          console.log("[stripe webhook] checkout.session.completed: profiles update success", { userId });
         }
-
-        console.log("[stripe webhook] checkout.session.completed: profiles update success", { userId });
         break;
       }
       case "customer.subscription.created":
