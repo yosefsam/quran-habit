@@ -87,32 +87,17 @@ export async function POST(request: Request) {
           break;
         }
 
-        const profileUpdate: Record<string, unknown> = {
-          is_pro: true,
-          subscription_status: "active",
-        };
-        if (customerId) profileUpdate.stripe_customer_id = customerId;
-        if (stripeSubscriptionId) profileUpdate.stripe_subscription_id = stripeSubscriptionId;
-
-        const { error: profileErr } = await admin.from("profiles").update(profileUpdate).eq("id", userId);
+        // Raw SQL via RPC (not PostgREST `.from('profiles')`) avoids PGRST205 schema-cache issues on table routes.
+        const { error: profileErr } = await admin.rpc("stripe_webhook_set_profile_pro", {
+          p_user_id: userId,
+          p_stripe_customer_id: customerId,
+          p_stripe_subscription_id: stripeSubscriptionId,
+        });
         if (profileErr) {
-          logSupabaseError("checkout.session.completed: profiles update failed", profileErr);
-          const upsertRow = {
-            id: userId,
-            ...profileUpdate,
-            updated_at: new Date().toISOString(),
-          };
-          const { error: upsertErr } = await admin.from("profiles").upsert(upsertRow, { onConflict: "id" });
-          if (upsertErr) {
-            logSupabaseError("checkout.session.completed: profiles upsert fallback failed", upsertErr);
-            return NextResponse.json({ error: "Profile update failed" }, { status: 500 });
-          }
-          console.log("[stripe webhook] checkout.session.completed: profiles upsert success (after update failed)", {
-            userId,
-          });
-        } else {
-          console.log("[stripe webhook] checkout.session.completed: profiles update success", { userId });
+          logSupabaseError("checkout.session.completed: profiles RPC (stripe_webhook_set_profile_pro) failed", profileErr);
+          return NextResponse.json({ error: "Profile update failed" }, { status: 500 });
         }
+        console.log("[stripe webhook] checkout.session.completed: profiles update success", { userId });
         break;
       }
       case "customer.subscription.created":
