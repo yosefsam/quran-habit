@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe/server";
+import { getPostgresPool } from "@/lib/db/postgres-pool";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { syncStripeSubscriptionToSupabase } from "@/lib/stripe/syncSubscriptionToSupabase";
 
@@ -19,16 +20,6 @@ function userIdFromCheckoutSession(session: Stripe.Checkout.Session): string | n
   const meta = session.metadata?.user_id;
   if (typeof meta === "string" && meta.trim()) return meta.trim();
   return null;
-}
-
-/** Log full PostgREST / Supabase error (e.g. PGRST205) for Vercel debugging. */
-function logSupabaseError(context: string, err: { message: string; code?: string; details?: string; hint?: string }) {
-  console.error(`[stripe webhook] ${context}`, {
-    code: err.code,
-    message: err.message,
-    details: err.details,
-    hint: err.hint,
-  });
 }
 
 export async function POST(request: Request) {
@@ -87,14 +78,32 @@ export async function POST(request: Request) {
           break;
         }
 
-        // Raw SQL via RPC (not PostgREST `.from('profiles')`) avoids PGRST205 schema-cache issues on table routes.
-        const { error: profileErr } = await admin.rpc("stripe_webhook_set_profile_pro", {
-          p_user_id: userId,
-          p_stripe_customer_id: customerId,
-          p_stripe_subscription_id: stripeSubscriptionId,
-        });
-        if (profileErr) {
-          logSupabaseError("checkout.session.completed: profiles RPC (stripe_webhook_set_profile_pro) failed", profileErr);
+        // Direct Postgres (node `pg`) bypasses PostgREST entirely — avoids PGRST202/PGRST205 on this write.
+        const pgPool = getPostgresPool();
+        if (!pgPool) {
+          console.error("[stripe webhook] checkout.session.completed: DATABASE_URL missing; cannot run direct Postgres update");
+          return NextResponse.json({ error: "Server misconfigured" }, { status: 501 });
+        }
+        try {
+          console.log("Using direct Postgres query for profile update");
+          await pgPool.query(
+            `UPDATE public.profiles
+             SET
+               is_pro = true,
+               subscription_status = 'active',
+               stripe_customer_id = COALESCE($2, stripe_customer_id),
+               stripe_subscription_id = COALESCE($3, stripe_subscription_id),
+               updated_at = now()
+             WHERE id = $1`,
+            [userId, customerId, stripeSubscriptionId]
+          );
+        } catch (pgErr: unknown) {
+          const e = pgErr as { message?: string; code?: string };
+          console.error("[stripe webhook] checkout.session.completed: direct Postgres profiles update failed", {
+            message: e?.message,
+            code: e?.code,
+            err: pgErr,
+          });
           return NextResponse.json({ error: "Profile update failed" }, { status: 500 });
         }
         console.log("[stripe webhook] checkout.session.completed: profiles update success", { userId });
