@@ -90,34 +90,14 @@ export async function updateSession(request: NextRequest) {
   const freeDailyLimit = getFreeDailyReaderLimit();
   const prefetch = isPrefetchRequest(request);
 
-  // Pro-only route gate (Stripe subscription).
+  // Pro-only route gate: `profiles.is_pro` (updated by Stripe webhook).
   if (isProOnlyPath(pathname) && user && !demo) {
-    // Prefer subscriptions table (webhook-managed); fall back to profile flags
-    // so users become Pro immediately after checkout completes.
-    const { data: sub } = await supabase
-      .from("subscriptions")
-      .select("status,current_period_end")
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false })
-      .limit(1)
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("is_pro")
+      .eq("id", user.id)
       .maybeSingle();
-
-    const subStatus = sub?.status ?? null;
-    const periodEnd = sub?.current_period_end ?? null;
-
-    const statusIsActive = subStatus === "active" || subStatus === "trialing";
-    const periodValid = !periodEnd || new Date(periodEnd).getTime() > Date.now();
-
-    let isPro = Boolean(statusIsActive && periodValid);
-
-    if (!isPro) {
-      const { data: prof } = await supabase
-        .from("profiles")
-        .select("is_pro,subscription_tier")
-        .eq("id", user.id)
-        .maybeSingle();
-      isPro = Boolean(prof?.is_pro === true || prof?.subscription_tier === "premium");
-    }
+    const isPro = prof?.is_pro === true;
 
     if (!isPro) {
       const pricing = new URL("/pricing", request.url);
@@ -160,28 +140,12 @@ export async function updateSession(request: NextRequest) {
   // This ties usage limits to authenticated user IDs and cannot be bypassed
   // by changing client-only local state.
   if (isFreeLimitedPath(pathname) && user && !demo && request.method === "GET" && !prefetch) {
-    const { data: sub } = await supabase
-      .from("subscriptions")
-      .select("status,current_period_end")
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false })
-      .limit(1)
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("is_pro")
+      .eq("id", user.id)
       .maybeSingle();
-
-    const subStatus = sub?.status ?? null;
-    const periodEnd = sub?.current_period_end ?? null;
-    const statusIsActive = subStatus === "active" || subStatus === "trialing";
-    const periodValid = !periodEnd || new Date(periodEnd).getTime() > Date.now();
-
-    let isPro = Boolean(statusIsActive && periodValid);
-    if (!isPro) {
-      const { data: prof } = await supabase
-        .from("profiles")
-        .select("is_pro,subscription_tier")
-        .eq("id", user.id)
-        .maybeSingle();
-      isPro = Boolean(prof?.is_pro === true || prof?.subscription_tier === "premium");
-    }
+    const isPro = prof?.is_pro === true;
 
     if (!isPro) {
       const today = new Date().toISOString().slice(0, 10);

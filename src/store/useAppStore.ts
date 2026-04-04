@@ -55,7 +55,7 @@ interface AppState {
   addVisitedPage: (page: number) => void;
   addCompletedPage: (page: number) => void;
 
-  /** Pro subscription status (derived from Stripe webhook -> Supabase subscriptions). */
+  /** Pro status from `profiles.is_pro` via GET /api/reading-state (and visibility refresh). */
   proStatus: "unknown" | "free" | "pro";
   setProStatus: (s: "unknown" | "free" | "pro") => void;
 

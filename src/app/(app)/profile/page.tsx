@@ -50,8 +50,8 @@ export default function ProfilePage() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-      const { data } = await supabase.from("profiles").select("subscription_tier").eq("id", user.id).maybeSingle();
-      setSubscriptionTier(data?.subscription_tier ?? "free");
+      const { data } = await supabase.from("profiles").select("is_pro").eq("id", user.id).maybeSingle();
+      setSubscriptionTier(data?.is_pro === true ? "premium" : "free");
     })();
   }, [supabase]);
 
@@ -65,6 +65,7 @@ export default function ProfilePage() {
       const row = (await res.json().catch(() => ({}))) as { subscription?: { isPro?: boolean } };
       if (row.subscription?.isPro === true) {
         setProStatus("pro");
+        setSubscriptionTier("premium");
         setConfirmingPro(false);
         router.replace("/profile");
         window.clearInterval(id);
