@@ -25,6 +25,26 @@ const FREE_LIMIT_PREFIXES = [
 
 const DEMO_DAILY_LIMIT_COOKIE = "hidayah_demo_limit";
 
+/**
+ * `supabase.auth.getUser()` refreshes the session via `setAll`, which writes cookies on
+ * `sessionResponse`. Returning a bare `NextResponse.redirect()` drops those Set-Cookie headers,
+ * so the browser keeps expired tokens and the next navigation looks logged out.
+ */
+function redirectPreservingSupabaseSession(sessionResponse: NextResponse, url: URL): NextResponse {
+  const redirect = NextResponse.redirect(url);
+  const withGetSetCookie = sessionResponse.headers as Headers & { getSetCookie?: () => string[] };
+  const serialized = typeof withGetSetCookie.getSetCookie === "function" ? withGetSetCookie.getSetCookie() : [];
+  for (const cookie of serialized) {
+    redirect.headers.append("Set-Cookie", cookie);
+  }
+  if (serialized.length === 0) {
+    sessionResponse.cookies.getAll().forEach(({ name, value }) => {
+      redirect.cookies.set(name, value);
+    });
+  }
+  return redirect;
+}
+
 function isPublicPath(pathname: string): boolean {
   if (pathname === "/") return true;
   if (pathname.startsWith("/login")) return true;
@@ -102,14 +122,14 @@ export async function updateSession(request: NextRequest) {
     if (!isPro) {
       const pricing = new URL("/pricing", request.url);
       pricing.searchParams.set("next", pathname + request.nextUrl.search);
-      return NextResponse.redirect(pricing);
+      return redirectPreservingSupabaseSession(supabaseResponse, pricing);
     }
   }
 
   if (isProtectedPath(pathname) && !user && !demo) {
     const login = new URL("/login", request.url);
     login.searchParams.set("next", pathname + request.nextUrl.search);
-    return NextResponse.redirect(login);
+    return redirectPreservingSupabaseSession(supabaseResponse, login);
   }
 
   // Demo limit gate: server-side cookie counter (httpOnly) for free demo sessions.
@@ -124,7 +144,7 @@ export async function updateSession(request: NextRequest) {
       const pricing = new URL("/pricing", request.url);
       pricing.searchParams.set("limit", "demo");
       pricing.searchParams.set("next", pathname + request.nextUrl.search);
-      return NextResponse.redirect(pricing);
+      return redirectPreservingSupabaseSession(supabaseResponse, pricing);
     }
 
     supabaseResponse.cookies.set(DEMO_DAILY_LIMIT_COOKIE, `${today}:${count + 1}`, {
@@ -161,14 +181,14 @@ export async function updateSession(request: NextRequest) {
         const pricing = new URL("/pricing", request.url);
         pricing.searchParams.set("limit", "free");
         pricing.searchParams.set("next", pathname + request.nextUrl.search);
-        return NextResponse.redirect(pricing);
+        return redirectPreservingSupabaseSession(supabaseResponse, pricing);
       }
       // Free-tier usage is incremented via POST /api/usage/free-daily-increment (reader + session SPA navigation).
     }
   }
 
   if ((pathname === "/login" || pathname === "/signup") && user) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return redirectPreservingSupabaseSession(supabaseResponse, new URL("/dashboard", request.url));
   }
 
   return supabaseResponse;
