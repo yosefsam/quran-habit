@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
+import { useAppStore } from "@/store/useAppStore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Logo } from "@/components/Logo";
@@ -21,8 +22,15 @@ export default function PricingPage() {
   }, []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const authDisplayName = useAppStore((s) => s.authDisplayName);
+  const authEmail = useAppStore((s) => s.authEmail);
+  const isDemo = useAppStore((s) => s.isDemo);
+  const persistedAuthUserId = useAppStore((s) => s.persistedAuthUserId);
   const limitReason = searchParams.get("limit");
   const nextPath = searchParams.get("next");
+
+  const showAuthedNav = !isDemo && Boolean(persistedAuthUserId);
+  const navGreetingName = authDisplayName?.trim() || authEmail?.split("@")[0]?.trim() || "there";
 
   async function startCheckout() {
     setError(null);
@@ -33,8 +41,8 @@ export default function PricingPage() {
         setLoading(false);
         return;
       }
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
         window.location.href = `/login?next=${encodeURIComponent(nextPath || "/pricing")}`;
         return;
       }
@@ -67,12 +75,33 @@ export default function PricingPage() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <Logo size="md" tone="onDark" href="/" />
           <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-zinc-400 transition hover:text-white">
-              Sign in
-            </Link>
-            <Button asChild size="sm" className="bg-emerald-600 text-white hover:bg-emerald-500">
-              <Link href="/signup">Get started</Link>
-            </Button>
+            {showAuthedNav ? (
+              <>
+                <span
+                  className="max-w-[10rem] truncate text-sm text-zinc-400 sm:max-w-[14rem]"
+                  title={authDisplayName || authEmail || undefined}
+                >
+                  Hi, {navGreetingName}
+                </span>
+                <Button
+                  asChild
+                  size="sm"
+                  variant="outline"
+                  className="border-white/20 bg-transparent text-zinc-100 hover:bg-white/10 hover:text-white"
+                >
+                  <Link href="/dashboard">Open app</Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="text-sm text-zinc-400 transition hover:text-white">
+                  Sign in
+                </Link>
+                <Button asChild size="sm" className="bg-emerald-600 text-white hover:bg-emerald-500">
+                  <Link href="/signup">Get started</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </nav>
