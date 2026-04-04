@@ -65,6 +65,10 @@ interface AppState {
   /** Last authenticated Supabase user id persisted locally — used to avoid cross-user data bleed. */
   persistedAuthUserId: string | null;
   setPersistedAuthUserId: (id: string | null) => void;
+  /** Not persisted — filled by UserSessionProvider from Supabase auth + profiles. */
+  authDisplayName: string | null;
+  authEmail: string | null;
+  setAuthIdentity: (p: { displayName: string | null; email: string | null }) => void;
   /** Clear all user-specific data when account changes (includes bookmarks). */
   clearDataForUserSwitch: () => void;
 }
@@ -83,6 +87,8 @@ export const useAppStore = create<AppState>()(
             userGoal: initialData.goal,
             streak: initialData.streak,
             sessions: initialData.sessions,
+            authDisplayName: null,
+            authEmail: null,
           });
         else set({ isDemo: false });
       },
@@ -148,6 +154,9 @@ export const useAppStore = create<AppState>()(
 
       persistedAuthUserId: null,
       setPersistedAuthUserId: (persistedAuthUserId) => set({ persistedAuthUserId }),
+      authDisplayName: null,
+      authEmail: null,
+      setAuthIdentity: ({ displayName, email }) => set({ authDisplayName: displayName, authEmail: email }),
       clearDataForUserSwitch: () => {
         clearLegacyReaderStorage();
         set({
@@ -164,6 +173,8 @@ export const useAppStore = create<AppState>()(
           reminder: null,
           isDemo: false,
           proStatus: "unknown",
+          authDisplayName: null,
+          authEmail: null,
         });
         setDemoCookieClient(false);
       },

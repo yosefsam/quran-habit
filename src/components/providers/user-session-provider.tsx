@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { resolveUserDisplayName } from "@/lib/user-display";
 import { useAppStore } from "@/store/useAppStore";
 import type { Bookmark, ReaderPreferences, ReadingSession, Streak } from "@/types";
 
@@ -31,6 +32,28 @@ export function UserSessionProvider({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (!supabase) return;
 
+    const syncAuthIdentity = async () => {
+      const { isDemo: demo, setAuthIdentity } = useAppStore.getState();
+      if (demo) {
+        setAuthIdentity({ displayName: null, email: null });
+        return;
+      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setAuthIdentity({ displayName: null, email: null });
+        return;
+      }
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      setAuthIdentity({
+        displayName: resolveUserDisplayName(profile ?? undefined, user),
+        email: user.email ?? null,
+      });
+    };
+
     const reconcile = (nextId: string | null) => {
       const prev = useAppStore.getState().persistedAuthUserId;
       if (nextId && prev && nextId !== prev) {
@@ -41,6 +64,7 @@ export function UserSessionProvider({ children }: { children: React.ReactNode })
 
     supabase.auth.getUser().then(({ data: { user } }) => {
       reconcile(user?.id ?? null);
+      void syncAuthIdentity();
     });
 
     const {
@@ -50,13 +74,41 @@ export function UserSessionProvider({ children }: { children: React.ReactNode })
       if (event === "SIGNED_OUT") {
         setPersistedAuthUserId(null);
         loadedForUser.current = null;
+        useAppStore.getState().setAuthIdentity({ displayName: null, email: null });
         return;
       }
       reconcile(id);
+      void syncAuthIdentity();
     });
 
     return () => subscription.unsubscribe();
   }, [supabase, clearDataForUserSwitch, setPersistedAuthUserId]);
+
+  useEffect(() => {
+    if (!supabase || isDemo) return;
+    let cancelled = false;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (cancelled) return;
+      if (!user) {
+        useAppStore.getState().setAuthIdentity({ displayName: null, email: null });
+        return;
+      }
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      useAppStore.getState().setAuthIdentity({
+        displayName: resolveUserDisplayName(profile ?? undefined, user),
+        email: user.email ?? null,
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase, isDemo]);
 
   useEffect(() => {
     if (!supabase || isDemo || !persistedAuthUserId) return;

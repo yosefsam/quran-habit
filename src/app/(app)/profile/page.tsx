@@ -42,6 +42,8 @@ export default function ProfilePage() {
   const setPersistedAuthUserId = useAppStore((s) => s.setPersistedAuthUserId);
   const proStatus = useAppStore((s) => s.proStatus);
   const setProStatus = useAppStore((s) => s.setProStatus);
+  const authDisplayName = useAppStore((s) => s.authDisplayName);
+  const authEmail = useAppStore((s) => s.authEmail);
   const [subscriptionTier, setSubscriptionTier] = useState<string | null>(null);
   const [confirmingPro, setConfirmingPro] = useState(false);
 
@@ -112,7 +114,19 @@ export default function ProfilePage() {
         <Card>
           <CardHeader><CardTitle className="text-base flex items-center gap-2"><User className="h-4 w-4" />Account</CardTitle><CardDescription>Your profile</CardDescription></CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">Signed in. Update email/password in your account provider settings.</p>
+            <div className="space-y-3 text-sm">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Name</p>
+                <p className="mt-0.5 font-medium text-foreground">{authDisplayName ?? "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Email</p>
+                <p className="mt-0.5 break-all font-medium text-foreground">{authEmail ?? "—"}</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Update email or password in your account provider settings.
+            </p>
             <Button variant="outline" onClick={handleSignOut} className="w-full"><LogOut className="h-4 w-4 mr-2" />Sign out</Button>
           </CardContent>
         </Card>
